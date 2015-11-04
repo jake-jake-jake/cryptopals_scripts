@@ -2,6 +2,7 @@
 
 import itertools, base64, binascii
 from collections import Counter
+import random
 
 def hex_to_bytes(hex_string):
     ''' Return bytes object from hexadecimal string. 
@@ -23,6 +24,9 @@ def base64_to_bytes(b64):
 def bytes_to_hex(b):
     return binascii.hexlify(b)
 
+# Following functions used for calculating Hamming distance in bits.
+# I borrowed the the core operand (z &= z -1) from the internet, which
+# borrowed it from a 1960s comp sci paper.
 def hamming_distance(a, b):
     '''Return bitwise Hamming distance between equal length strings'''
     if len(a) != len(b):
@@ -34,13 +38,33 @@ def hamming_distance(a, b):
         z = ch1 ^ ch2
         while z:
             count += 1
-            z &= z - 1 # I don't know why this works but it does.
+            z &= z - 1 # This is pretty brilliant.
     return count
 
-def hamming_slices(string, keysize):
-    slice_a = string[:keysize]
-    slice_b = string[keysize:keysize * 2]
+def hamming_slices(string, keysize, start_block = 0):
+    ''' Return bitwise hamming distance of the two blocks of keysize length.
+        Defaults to index 0; can be keyed to subsequent blocks.'''
+    index = keysize * start_block 
+    slice_a = string[index: index + keysize]
+    slice_b = string[index + keysize: index + keysize * 2]
     return hamming_distance(slice_a, slice_b)
+
+def random_hamming(string, keysize):
+    ''' Return bitwise hamming distance of two random blocks of keysize length.'''
+    index = random.randint(0, len(string) - (2 * keysize))
+    slice_a = string[index:index + keysize]
+    slice_b = string[index + keysize:index + (2 * keysize)]
+    return hamming_distance(slice_a, slice_b)
+
+def slice_string_by_block(string, keysize):
+    ''' Create a list of subsequences from string, so that each subsequence is composed
+        of the Nth letter of each keysize block of string.'''
+    subs = []
+    for _ in range(keysize):
+        subs.append(string[_::keysize])
+    return subs 
+
+
     
 # Loads a dictionary to check cipher hacks against. In the main() function, defaults to
 # loading the dictionary.txt provided with Hacking Ciphers with Python
@@ -85,7 +109,3 @@ def get_dictionary_percentage(string, dictionary):
         if word.upper() in dictionary:
             dictionary_words += 1
     return float(dictionary_words/len(word_list))
-
-
-
-        
