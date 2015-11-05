@@ -1,8 +1,13 @@
 # cryptotools
 
-import itertools, base64, binascii
-from collections import Counter
+import base64, binascii
+import collections 
+import itertools 
 import random
+import string
+
+
+COMMON_ENGLISH_LETTERS = 'ETAOIN SHRDLU'
 
 def hex_to_bytes(hex_string):
     ''' Return bytes object from hexadecimal string. 
@@ -26,7 +31,7 @@ def bytes_to_hex(b):
 
 # Following functions used for calculating Hamming distance in bits.
 # I borrowed the the core operand (z &= z -1) from the internet, which
-# borrowed it from a 1960s comp sci paper.
+# borrowed it from a 1960s compsci paper.
 def hamming_distance(a, b):
     '''Return bitwise Hamming distance between equal length strings'''
     if len(a) != len(b):
@@ -56,6 +61,7 @@ def random_hamming(string, keysize):
     slice_b = string[index + keysize:index + (2 * keysize)]
     return hamming_distance(slice_a, slice_b)
 
+
 def slice_string_by_block(string, keysize):
     ''' Create a list of subsequences from string, so that each subsequence is composed
         of the Nth letter of each keysize block of string.'''
@@ -64,8 +70,7 @@ def slice_string_by_block(string, keysize):
         subs.append(string[_::keysize])
     return subs 
 
-
-    
+   
 # Loads a dictionary to check cipher hacks against. In the main() function, defaults to
 # loading the dictionary.txt provided with Hacking Ciphers with Python
 def load_dictionary(file_name = None):
@@ -80,14 +85,13 @@ def load_dictionary(file_name = None):
 
 
 
-# The following four functions are used to clean an input to see if it is English.
+# The following three functions are used to clean an input to see if it is English.
 # Eventually I will replace with polyglot integration to expand language functionality.
 def is_language(string, dictionary, word_percentage = 20, letter_percentage = 85):
     ''' Checks if string is a language by comparing words in string with
         loaded dictionary. Returns true if given percentage of word matches 
         and letters in string is high enough. Default values: word_percentage
-        is 20 and letter_percentage is 85.
-    '''
+        is 20 and letter_percentage is 85. '''
     word_match = (get_dictionary_percentage(string, dictionary) * 100) >= word_percentage
     sufficient_letters = (len(strip_string(string))/len(string) * 100) >= letter_percentage
     return word_match and sufficient_letters
@@ -109,3 +113,16 @@ def get_dictionary_percentage(string, dictionary):
         if word.upper() in dictionary:
             dictionary_words += 1
     return float(dictionary_words/len(word_list))
+
+
+# The functions are used to test the likelihood of slices of a ciphertext to see if the xored
+# key byte produces usable plaintext bytes.
+def check_chars(candidate_string, minimum_percentage = .60):
+    counts = collections.Counter(candidate_string)
+    hits = 0
+    for let, count in counts.most_common(13):
+        if let.upper() in COMMON_ENGLISH_LETTERS:
+            hits += 1
+        else:
+            continue
+    return hits/len(COMMON_ENGLISH_LETTERS) > minimum_percentage
