@@ -21,13 +21,19 @@ def bytes_xor(a, b):
     return bytes(x ^ y for x, y in zip(a, b))
 
 def bytes_to_base64(b):
-    return base64.encodebytes(b).decode()
+    return base64.encodebytes(b)
 
 def base64_to_bytes(b64):
-    return base64.b64decode(b64).decode()
+    return base64.b64decode(b64)
 
 def bytes_to_hex(b):
     return binascii.hexlify(b)
+
+def cycle_xor(pt, key):
+    ''' Xors a plaintext or ciphertext against a key, cycling on end of key.'''
+    cm = zip(list(pt), itertools.cycle(list(key)))
+    cm = [x ^ ord(y) for x, y in cm]
+    return cm
 
 # Following functions used for calculating Hamming distance in bits.
 # I borrowed the the core operand (z &= z -1) from the internet, which
@@ -37,8 +43,8 @@ def hamming_distance(a, b):
     if len(a) != len(b):
         raise ValueError('Undefined for strings of unequal length')
     count = 0
-    bits_a = [int(bin(ord(char)), 2) for char in a]
-    bits_b = [int(bin(ord(char)), 2) for char in b]
+    bits_a = [int(bin(char), 2) for char in a]
+    bits_b = [int(bin(char), 2) for char in b]
     for ch1, ch2 in zip(bits_a, bits_b):
         z = ch1 ^ ch2
         while z:
@@ -52,7 +58,7 @@ def hamming_slices(string, keysize, start_block = 0):
     index = keysize * start_block 
     slice_a = string[index: index + keysize]
     slice_b = string[index + keysize: index + keysize * 2]
-    return hamming_distance(slice_a, slice_b)
+    return hamming_distance(slice_a, slice_b) 
 
 def random_hamming(string, keysize):
     ''' Return bitwise hamming distance of two random blocks of keysize length.'''
@@ -116,13 +122,43 @@ def get_dictionary_percentage(string, dictionary):
 
 
 # The functions are used to test the likelihood of slices of a ciphertext to see if the xored
-# key byte produces usable plaintext bytes.
-def check_chars(candidate_string, minimum_percentage = .60):
-    counts = collections.Counter(candidate_string)
-    hits = 0
-    for let, count in counts.most_common(13):
-        if let.upper() in COMMON_ENGLISH_LETTERS:
-            hits += 1
-        else:
-            continue
-    return hits/len(COMMON_ENGLISH_LETTERS) > minimum_percentage
+# key byte produces plaintext with a likely-to-be-English distribution of chars.
+
+# From http://www.data-compression.com/english.html
+freqs = {
+    'a': 0.0651738,
+    'b': 0.0124248,
+    'c': 0.0217339,
+    'd': 0.0349835,
+    'e': 0.1041442,
+    'f': 0.0197881,
+    'g': 0.0158610,
+    'h': 0.0492888,
+    'i': 0.0558094,
+    'j': 0.0009033,
+    'k': 0.0050529,
+    'l': 0.0331490,
+    'm': 0.0202124,
+    'n': 0.0564513,
+    'o': 0.0596302,
+    'p': 0.0137645,
+    'q': 0.0008606,
+    'r': 0.0497563,
+    's': 0.0515760,
+    't': 0.0729357,
+    'u': 0.0225134,
+    'v': 0.0082903,
+    'w': 0.0171272,
+    'x': 0.0013692,
+    'y': 0.0145984,
+    'z': 0.0007836,
+    ' ': 0.1918182 
+}
+
+def check_chars(candidate_string):
+    ''' Return a score of an xor attempt using letter frequencies as points'''
+    score = 0
+    for char in candidate_string:
+        if char.lower() in freqs:
+            score += freqs[char.lower()]
+    return score
