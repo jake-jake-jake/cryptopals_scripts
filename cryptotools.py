@@ -162,3 +162,5 @@ def check_chars(candidate_string):
         if char.lower() in freqs:
             score += freqs[char.lower()]
     return score
+
+
