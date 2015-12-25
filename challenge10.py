@@ -72,3 +72,5 @@ with open('10.txt') as fo:
 cipher = AES.new(key, AES.MODE_CBC, IV)
 
 decrypted = cipher.decrypt(encrypted)
+print(decrypted)
+
