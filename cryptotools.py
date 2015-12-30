@@ -163,4 +163,18 @@ def check_chars(candidate_string):
             score += freqs[char.lower()]
     return score
 
+def pad_block(data, block_length, padding = b'\x04'):
+    ''' Return bytestring of specified block_length, using passed
+        data and padding to do so. '''
+    while len(data) < block_length:
+        data += padding
+    return data
 
+def pad_data(data, block_length, padding = b'\x04'):
+    ''' Pad data with padding byte if data not divisible by block_length.'''
+    if len(data) % block_length:
+        data_blocks = [data[x:x + block_length] for x in range(0, len(data), block_length)]
+        data_blocks[-1] = pad_block(data_blocks[-1], block_length, padding)
+        return b''.join(data_blocks)
+    else:
+        return data
