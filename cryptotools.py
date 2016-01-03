@@ -1,6 +1,6 @@
 # cryptotools
 
-import base64, binascii
+import binascii
 import collections 
 import itertools 
 import random
@@ -11,7 +11,7 @@ COMMON_ENGLISH_LETTERS = 'ETAOIN SHRDLU'
 
 def hex_to_bytes(hex_string):
     ''' Return bytes object from hexadecimal string. 
-        This is a wrapper function. '''
+        This is a wrapper function, and likely unnecessary '''
     return bytes.fromhex(hex_string)
 
 def bytes_xor(a, b):
@@ -21,13 +21,13 @@ def bytes_xor(a, b):
     return bytes(x ^ y for x, y in zip(a, b))
 
 def bytes_to_base64(b):
-    return base64.encodebytes(b)
+    return binascii.b2a_base64(b)
 
 def base64_to_bytes(b64):
-    return base64.b64decode(b64)
+    return binascii.a2b_base64(b64)
 
 def bytes_to_hex(b):
-    return binascii.hexlify(b)
+    return bytes.hex(b)
 
 def cycle_xor(pt, key):
     ''' Xors a plaintext or ciphertext against a key, cycling on end of key.'''

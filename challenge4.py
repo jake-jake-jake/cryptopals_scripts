@@ -4,19 +4,18 @@
 import cryptotools as ct
 from itertools import cycle
 
-dictionary = ct.load_dictionary()
-
 def cycle_xor(hex_string):
-    string_bytes = ct.hex_to_bytes(hex_string)
-    list_bytes = [b for b in string_bytes]
+    byte_string = ct.hex_to_bytes(hex_string)
     found_match = False
+    dictionary = ct.load_dictionary()
     for _ in range(256):
-        xored = bytes(b ^ _ for b in list_bytes)
+        xored = bytes(b ^ _ for b in list(byte_string))
         if ct.is_language(''.join([chr(b) for b in xored]), dictionary):
-            print('String: {} \n Key: {}, ASCII: {}'.format(hex_string, _, repr(xored)))
+            print('Hex String: {} \nKey: "{}" \nASCII: {}'.format(hex_string, chr(_), xored.decode()))
             found_match = True
     if not found_match:
-        print('Unable to find match for string: \n{}'.format(hex_string))
+        # I had this print out each line in the loaded .txt, but that made output messy. Now passing.
+        pass
     
 
 with open('4.txt') as h_s:
