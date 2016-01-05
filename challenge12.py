@@ -21,9 +21,7 @@ def ECB_encrypt(data, key):
     return ECB_cipher.encrypt(PKCS7_pad(data, 16))
 
 def detect_AES_ECB_mode(ciphertext, blocksize = 16):
-    ''' Given a block of AES encrypted data, returns true if encrypted in ECB mode.
-        This will distinguish ECB from CBC if there is a blocksize of the same byte 
-        repeated in the plaintext. '''
+    ''' Given a block of AES encrypted data, returns true if encrypted in ECB mode. '''
     blocks = [ciphertext[x:x + blocksize] for x in range(0,len(ciphertext),blocksize)]
     if len(blocks) > len(set(blocks)):
         return True
