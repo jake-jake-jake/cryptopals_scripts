@@ -1,3 +1,5 @@
+#!/usr/bin/env python3.5
+
 # Cryptopals Challenge 11
 
 from collections import Counter
@@ -7,72 +9,37 @@ from random import randint
 
 
 def scramble_data(data):
-    ''' Randomly encrypt data using either CBC or ECB mode.
-        Returns scrambled data in tuple with 1, 0 indicating
-        ECB or CBC mode, respectively.'''
-    expanded_data = add_bytes(data)
+    ''' Encrypt data using either CBC or ECB mode after pre/appending 5-10 bytes.'''
     EBC_or_CBC = randint(0,1)
     if EBC_or_CBC:
-        jb = (ECB_encrypt(expanded_data), EBC_or_CBC) 
-        return jb
+        return (ECB_encrypt(add_bytes(data)), EBC_or_CBC) 
     else:
-        jb = (CBC_encrypt(expanded_data), EBC_or_CBC) 
-        return jb
+        return (CBC_encrypt(add_bytes(data)), EBC_or_CBC) 
 
-def pad_block(data, block_length, padding = b'\x04'):
-    ''' Return bytestring of specified block_length, using passed
-        data and padding to do so. '''
-    while len(data) < block_length:
-        data += padding
-    return data
-
-def pad_data(data, block_length, padding = b'\x04'):
-    data_blocks = [data[x:x + block_length] for x in range(0, len(data), block_length)]
-    padded_data = []
-    for block in data_blocks:
-        if len(block) < block_length:
-            padded_data.append(pad_block(block, block_length, padding))
-        else:
-                                                padded_data.append(block)
-    return b''.join(padded_data)
+def PKCS7_pad(data, block_length):
+    ''' Pad data with PKCS7 padding.'''
+    missing_bytes = block_length - (len(data) % block_length)
+    return (data + bytes([missing_bytes])*missing_bytes)
 
 def add_bytes(data):
     ''' Returns data with pre/suffix of 5-10 cryptographically random bytes.'''
-    concatenated_bytes = []
-    prepend_bytes = os.urandom(randint(5, 10))
-    append_bytes = os.urandom(randint(5, 10))
-    concatenated_bytes.append(prepend_bytes)
-    concatenated_bytes.append(data)
-    concatenated_bytes.append(append_bytes)
-    return b''.join(concatenated_bytes)
-
+    return (os.urandom(randint(5, 10)) + data + os.urandom(randint(5, 10)))
+    
 def CBC_encrypt(data):
     key = os.urandom(16)
     iv = os.urandom(16)
-    padded_data = pad_data(data, 16)
+    padded_data = PKCS7_pad(data, 16)
     CBC_cipher = AES.new(key, AES.MODE_CBC, iv)
     return CBC_cipher.encrypt(padded_data)
 
 def ECB_encrypt(data):
     key = os.urandom(16)
     ECB_cipher = AES.new(key, AES.MODE_ECB)
-    padded_data = pad_data(data, 16)
+    padded_data = PKCS7_pad(data, 16)
     return ECB_cipher.encrypt(padded_data)
 
 def detect_AES_ECB_mode(ciphertext, blocksize = 16):
-    
     ''' Given a block of AES encrypted data, returns true if encrypted in ECB mode. '''
-##    cipherslices = [ciphertext[x::blocksize] for x in range(blocksize)]
-##    score = 0
-##    correction = int(len(ciphertext) / (blocksize * 10)) + 1
-##    for slice in cipherslices:
-##        for k in Counter(slice):
-##            score += Counter(slice)[k] - correction
-##    if score >= correction:
-##        return True
-##    else:
-##        return False
-##  I can probably refine the above a bit but the following works and is more efficient.
     blocks = [ciphertext[x:x + blocksize] for x in range(0,len(ciphertext),blocksize)]
     if len(blocks) > len(set(blocks)):
         return True
@@ -95,5 +62,6 @@ for _ in range(100):
         results.append((cipher_score, cipher_data[1]))
 
 print(sorted(results))
+
 
 
