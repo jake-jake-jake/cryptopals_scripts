@@ -4,8 +4,8 @@
 
 def PKCS7_pad(data, block_length):
     ''' Pad data with PKCS7 padding.'''
-    missing_bytes = block_length - (len(data) % block_length)
-    return (data + bytes([missing_bytes])*missing_bytes)
+    padding = block_length - (len(data) % block_length)
+    return (data + bytes([padding])*padding)
 
 test_string = b'YELLOW SUBMARINE'
 test_block_len = 20

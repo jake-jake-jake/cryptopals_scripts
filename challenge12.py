@@ -12,8 +12,8 @@ def prepend_bytes(target_bytes, insertion_byte = b'A', insertion_multiple = 32):
   
 def PKCS7_pad(data, block_length):
     ''' Pad data with PKCS7 padding.'''
-    missing_bytes = block_length - (len(data) % block_length)
-    return (data + bytes([missing_bytes])*missing_bytes)
+    padding = block_length - (len(data) % block_length)
+    return (data + bytes([padding])*padding)
 
 def ECB_encrypt(data, key):
     ''' Takes data and key to produce AES ECB cipher.'''

@@ -18,8 +18,8 @@ def scramble_data(data):
 
 def PKCS7_pad(data, block_length):
     ''' Pad data with PKCS7 padding.'''
-    missing_bytes = block_length - (len(data) % block_length)
-    return (data + bytes([missing_bytes])*missing_bytes)
+    padding = block_length - (len(data) % block_length)
+    return (data + bytes([padding])*padding)
 
 def add_bytes(data):
     ''' Returns data with pre/suffix of 5-10 cryptographically random bytes.'''
