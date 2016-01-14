@@ -29,7 +29,7 @@ def detect_AES_ECB_mode(ciphertext, blocksize = 16):
     else:
         return False
 
-def confirm_ECB(target, key):
+def find_ECB_block_length(target, key):
     ''' Return likely blocklength of ECB mode cipher.'''
     for _ in range(1, 33):
         prepended_target = prepend_bytes(target, insertion_multiple = _)
@@ -37,10 +37,14 @@ def confirm_ECB(target, key):
         if detect_AES_ECB_mode(encrypted_target):
             print('Duplicate blocks of data with {} byte insertion, suggesting {} byte block length.'.format(_, _//2))
             return _//2
-        else:
-            continue
-    print('Unable to confirm ECB mode.')
-    return False
+    else:
+        print('Unable to confirm ECB mode.')
+        return False
+
+def create_byte_dict(insertion, key):
+    return {ECB_encrypt(insertion + b, key)[15]: b for b in range(256)}
+
+
 
 b64_data = '''Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkg
                  aGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq
@@ -49,7 +53,4 @@ b64_data = '''Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkg
 b64_bytes = binascii.a2b_base64(b64_data)
 static_key = os.urandom(16)
 
-def crack_target(target, key):
-    pass
-
-print(confirm_ECB(b64_bytes, static_key))
+print(find_ECB_block_length(b64_bytes, static_key))
