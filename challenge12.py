@@ -42,7 +42,24 @@ def find_ECB_block_length(target, key):
         return False
 
 def create_byte_dict(insertion, key):
-    return {ECB_encrypt(insertion + b, key)[15]: b for b in range(256)}
+    return {ECB_encrypt(insertion + bytes([b]), key)[:16]: bytes([b]) for b in range(256)}
+
+
+def byte_byte_ECB(target, key, block_length):
+    plaintext = []
+    b_l = block_length
+    while True:
+        insertion = b'A' * (b_l - (len(plaintext) % b_l) - 1)
+        b_i = len(plaintext) // b_l
+        encrypted_target = ECB_encrypt(insertion + target, key)
+        prepended_plaintext = insertion + b''.join(plaintext)
+        byte_dict = create_byte_dict(prepended_plaintext[b_i * b_l:(b_i * b_l) + b_l], key)
+        try:
+            encrypted_block = encrypted_target[b_l * b_i:(b_i * b_l) + b_l]
+            plaintext.append(byte_dict[encrypted_block])
+        except:
+            return b''.join(plaintext)
+
 
 
 
@@ -50,7 +67,9 @@ b64_data = '''Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkg
                  aGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq
                  dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUg
                  YnkK'''
+
 b64_bytes = binascii.a2b_base64(b64_data)
 static_key = os.urandom(16)
 
-print(find_ECB_block_length(b64_bytes, static_key))
+target_block_length = find_ECB_block_length(b64_bytes, static_key)
+print(byte_byte_ECB(b64_bytes, static_key, target_block_length))
