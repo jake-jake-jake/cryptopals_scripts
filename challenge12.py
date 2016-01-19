@@ -45,9 +45,8 @@ def create_byte_dict(insertion, key):
     return {ECB_encrypt(insertion + bytes([b]), key)[:16]: bytes([b]) for b in range(256)}
 
 
-def byte_byte_ECB(target, key, block_length):
+def byte_byte_ECB(target, key, b_l):
     plaintext = []
-    b_l = block_length
     while True:
         insertion = b'A' * (b_l - (len(plaintext) % b_l) - 1)
         b_i = len(plaintext) // b_l
@@ -59,9 +58,6 @@ def byte_byte_ECB(target, key, block_length):
             plaintext.append(byte_dict[encrypted_block])
         except:
             return b''.join(plaintext)
-
-
-
 
 b64_data = '''Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkg
                  aGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq
