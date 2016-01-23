@@ -13,7 +13,7 @@ def profile_for(email=b'foo@bar.com', id_num=b'10', role=b'user'):
     ''' Create user Id and role from email.'''
     if b'&' in email or b'=' in email:
         raise ValueError('No "&" or "=" chars allowed in email.')
-    return b'email=%b&id=%brole=%b' % (email, id_num, role)
+    return b'email=%b&id=%b&role=%b' % (email, id_num, role)
 
 def PKCS7_pad(data, block_length):
     ''' Pad data with PKCS7 padding.'''
@@ -32,7 +32,7 @@ def ECB_decrypt(cipher, key):
 
 def cookie_oracle(email, key):
     ''' Return an ECB encrypted cookie from an email.'''
-    return ECB_encrypt(PKCS7_pad(email, 16), key)
+    return ECB_encrypt(PKCS7_pad(profile_for(email=email), 16), key)
 
 # Debugging variables
 dummy_morsels = b'foo=bar&baz=qux&zap=zazzle'
@@ -41,7 +41,7 @@ static_key = os.urandom(16)
 # These are crafted to do the work. If our profile_for function stripped
 # padding characters this method would not work.
 insertion_block = PKCS7_pad(b'admin', 16)
-print(insertion_block)
+print(insertion_block, len(insertion_block))
 bait_email = b'xx@aol.com'
 switch_email = b'xxxxxx@aol.com'
 
@@ -59,3 +59,5 @@ print(ECB_decrypt(attack_prefix, static_key))
 finished_cookie = ECB_decrypt(attack_prefix + attack_suffix, static_key)
 
 print(finished_cookie)
+
+print(len(ECB_encrypt(b'email=xx@aol.com', static_key)))
