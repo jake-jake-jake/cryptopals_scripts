@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 
 from Crypto.Cipher import AES
-from http import cookies
 import os
 
 
 
 def parse_cookie(s):
-    return s.replace('&', ';')
+    ''' Return dictionary from structured literal.'''
+    return dict(x.split(b'=') for x in s.split(b'&'))
 
-def profile_for(email='foo@bar.com', id_num=10, role='user'):
-    if '&' in email or '=' in email:
+def profile_for(email=b'foo@bar.com', id_num=b'10', role=b'user'):
+    ''' Create user Id and role from email.'''
+    if b'&' in email or b'=' in email:
         raise ValueError('No "&" or "=" chars allowed in email.')
-    return 'email={}&id={}role={}'.format(email, id_num, role)
+    return b'email=%b&id=%brole=%b' % (email, id_num, role)
 
 def PKCS7_pad(data, block_length):
     ''' Pad data with PKCS7 padding.'''
@@ -25,20 +26,36 @@ def ECB_encrypt(data, key):
     return ECB_cipher.encrypt(PKCS7_pad(data, 16))
 
 def ECB_decrypt(cipher, key):
-    ''' Decript ECB cipher using provided key'''
+    ''' Decrypt ECB cipher using provided key'''
     ECB_cipher = AES.new(key, AES.MODE_ECB)
     return ECB_cipher.decrypt(PKCS7_pad(cipher, 16))
 
-key = os.urandom(16)
-c = cookies.BaseCookie()
+def cookie_oracle(email, key):
+    ''' Return an ECB encrypted cookie from an email.'''
+    return ECB_encrypt(PKCS7_pad(email, 16), key)
 
-dummy_morsels = 'foo=bar&baz=qux&zap=zazzle'
-dummy_email = 'aaaa@bbbbb.com'
-dummy_profile = profile_for(dummy_email)
-encrypted_dummy = ECB_encrypt(bytes(dummy_profile, encoding='utf-8'), key=key)
+# Debugging variables
+dummy_morsels = b'foo=bar&baz=qux&zap=zazzle'
+static_key = os.urandom(16)
 
-print('Dummy email length: {}'.format(len(dummy_email)))
-print('Dummy profile length: {}'.format(len(dummy_profile)))
-print('Dummy encryped cookie length: {}'.format(len(encrypted_dummy)))
+# These are crafted to do the work. If our profile_for function stripped
+# padding characters this method would not work.
+insertion_block = PKCS7_pad(b'admin', 16)
+print(insertion_block)
+bait_email = b'xx@aol.com'
+switch_email = b'xxxxxx@aol.com'
 
+print(profile_for(bait_email + insertion_block))
 
+# Create an insertion block to append to cookie, which should be 'admin' plus
+# padding to mimic a final block of a cipher. Then create a prefix that should
+# terminate just in time to accept our crafted 'admin' block.
+attack_suffix = cookie_oracle((bait_email+insertion_block), static_key)[16:32]
+print(ECB_decrypt(attack_suffix,static_key))
+attack_prefix = cookie_oracle((switch_email), static_key)[:32]
+print(ECB_decrypt(attack_prefix, static_key))
+
+# Put pieces together.
+finished_cookie = ECB_decrypt(attack_prefix + attack_suffix, static_key)
+
+print(finished_cookie)
