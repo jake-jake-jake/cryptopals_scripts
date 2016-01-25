@@ -8,6 +8,16 @@ def PKCS7_pad(data, block_length):
     return (data + bytes([padding])*padding)
 
 def PKCS7_unpad(data):
-    if not set(data[-1:]) == set(data[-data[-1]:]):
+    # if data[-1] > len(data)//2:
+    #     raise ValueError('Invalid padding.')
+    if data[-1] == 0 or not len(set(data[-data[-1]:])) == 1:
         raise ValueError('Invalid padding.')
+    # elif not len(set(data[-data[-1]:])) == 1:
+    #     raise ValueError('Invalid padding.')
     return data[:len(data)-data[-1]]
+
+admin_invalid = b'yellowsubmarine\x02'
+admin_valid = PKCS7_pad(b'admin', 16)
+
+print(PKCS7_unpad(admin_valid))
+admin_unpadded = PKCS7_unpad(admin_invalid)
