@@ -29,15 +29,29 @@ def ECB_oracle(attacker_controlled, prefix = None, key = None):
         prefix = static_prefix
     if key == None:
         key = static_key
-    con_bytes = prefix + attacker_controlled + b64_bytes
+    con_bytes = PKCS7_pad(prefix + attacker_controlled + b64_bytes, 16)
     return ECB_encrypt(con_bytes, key)
 
+def find_static_insertion(oracle):
+    ''' Return insertion length that increases cipher by one blocksize.'''
+    base_len = len(oracle(bytes(0)))
+    # print('base_len:', base_len)
+    for i in range(1, 17):
+        # print('static_index_len:', len(oracle(bytes(i))))
+        if len(oracle(bytes(i))) == base_len:
+            # print('continuing')
+            continue
+        else:
+            # print('index of %i increases len of oracle output' % i)
+            return i
+    else:
+        raise ValueError('Blocksize of cipher is longer than 16.')
 
 static_key = os.urandom(16)
 static_prefix = os.urandom(randint(1, 50))
+static_index = find_static_insertion(ECB_oracle)
 
 print("static_key:", static_key)
-print("static_prefix:", static_prefix)
-
-for _ in range(1, 17):
-    print (len(ECB_oracle(bytes(_))))
+print('static_prefix:', static_prefix)
+print("static_prefix length:", len(static_prefix))
+print('static_index:', static_index)
