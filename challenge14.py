@@ -19,7 +19,7 @@ def ECB_encrypt(data, key):
 
 def ECB_oracle(attacker_controlled, prefix = None, key = None):
     ''' Oracle prefixes random bytes to an attacker controlled variable
-        then appends target bytes, pads and then encrypts. '''
+        then appends target bytes and encrypts. '''
     b64_data = '''Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkg
                  aGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq
                  dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUg
@@ -30,35 +30,31 @@ def ECB_oracle(attacker_controlled, prefix = None, key = None):
     if key == None:
         key = static_key
     con_bytes = prefix + attacker_controlled + b64_bytes
-    print('length of con_bytes', len(con_bytes))
     return ECB_encrypt(con_bytes, key)
 
 def find_static_insertion(oracle):
-    ''' Return insertion length that increases cipher by one blocksize.'''
-    base_len = len(oracle(bytes(0)))
-    print('base_len:', base_len)
-    for i in range (16, 32):
-        print('with insertion of ', i, 'length of', len(oracle(bytes(i))))
-        if len(oracle(bytes(i + 1))) == base_len + 32:
-            return i
-    else: 
+    ''' Returns insertion to zero random prefix to end of block.'''
+    for i in range (48):
+        if verify_ECB(oracle, i):
+            return i - 32
+    else:
         raise ValueError('Unable to find static insertion. Block length longer than 16.')
 
-def find_index_block(oracle, static_insertion_length):
+def verify_ECB(oracle, insertion):
     ''' Find index where variable insertion will be used to attack cipher.'''
-    cipher = oracle(bytes(static_insertion_length + 32))
+    cipher = oracle(bytes(insertion))
     for i in range(0, len(cipher)-16, 16):
         if cipher[i:i+16] == cipher[i+16:i+32]:
-            return i
+            return True
     else: 
-        raise ValueError('Unable to verify ECB encryption.')
+        return False
 
 
 static_key = os.urandom(16)
 static_prefix = os.urandom(randint(1, 50))
 base_cipher_length = len(ECB_oracle(bytes(0)))
 static_insertion = find_static_insertion(ECB_oracle)
-block_index = find_index_block(ECB_oracle, static_insertion)
+# block_index = find_index_block(ECB_oracle, static_insertion)
 
 print('base_cipher_length:', base_cipher_length)
 print("static_key:", static_key)
@@ -66,4 +62,4 @@ print('static_prefix:', static_prefix)
 print("static_prefix length:", len(static_prefix))
 print('static_insertion:', static_insertion)
 print('prefix plus insertion length:', len(static_prefix) + static_insertion)
-print('block_index:', block_index)
+# print('block_index:', block_index)
