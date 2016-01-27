@@ -51,18 +51,22 @@ def verify_ECB(oracle, insertion):
         return False
 
 def create_byte_dict(oracle, insertion, b_i):
-    ''' Return dictionary of all possible encrypted blocks at index b_i.'''
+    ''' Return dictionary of all possible end bytes for block at index b_i.'''
     index = b_i * 16
-    return {oracle(insertion + bytes([b])): bytes([b])[index: index + 16] 
+    print('byte_dict index (chars):', index)
+    return {oracle(insertion + bytes([b]))[index: index + 16]: bytes([b]) 
             for b in range(256)}
 
 def byte_byte_ECB(oracle, static_insert, static_ind):
+    ''' Using determined static insertion and index, break ECB cipher byte by byte.'''
     plaintext = []
     while True:
-        insertion = bytes((15 - (len(plaintext) % 16) + static_insert))
+        insert = bytes((15 - (len(plaintext) % 16) + static_insert))
+        print('length of insert:', len(insert))
         b_i = (len(plaintext) + static_ind) // 16    # block index
-        encrypted_target = oracle(insertion)
-        prepended_plaintext = insertion + b''.join(plaintext)
+        print('byte_byte_ECB b_i (block index):', b_i)
+        prepended_plaintext = insert + b''.join(plaintext)
+        encrypted_target = oracle(insert)
         byte_dict = create_byte_dict(oracle, prepended_plaintext, b_i)
         try:
             encrypted_block = encrypted_target[16 * b_i:(b_i * 16) + 16]
