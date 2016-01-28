@@ -53,7 +53,6 @@ def verify_ECB(oracle, insertion):
 def create_byte_dict(oracle, insertion, b_i):
     ''' Return dictionary of all possible end bytes for block at index b_i.'''
     index = b_i * 16
-    print('byte_dict index (chars):', index)
     return {oracle(insertion + bytes([b]))[index: index + 16]: bytes([b]) 
             for b in range(256)}
 
@@ -62,9 +61,7 @@ def byte_byte_ECB(oracle, static_insert, static_ind):
     plaintext = []
     while True:
         insert = bytes((15 - (len(plaintext) % 16) + static_insert))
-        print('length of insert:', len(insert))
         b_i = (len(plaintext) + static_ind) // 16    # block index
-        print('byte_byte_ECB b_i (block index):', b_i)
         prepended_plaintext = insert + b''.join(plaintext)
         encrypted_target = oracle(insert)
         byte_dict = create_byte_dict(oracle, prepended_plaintext, b_i)
@@ -79,13 +76,12 @@ static_key = os.urandom(16)
 static_prefix = os.urandom(randint(1, 50))
 base_cipher_length = len(ECB_oracle(bytes(0)))
 static_insertion, static_index = find_insertion_and_index(ECB_oracle)
-# block_index = find_index_block(ECB_oracle, static_insertion)
 
-print('base_cipher_length:', base_cipher_length)
-print("static_key:", static_key)
-print('static_prefix:', static_prefix)
-print("static_prefix length:", len(static_prefix))
-print('static_insertion:', static_insertion)
-print('static_index:', static_index)
+# print('base_cipher_length:', base_cipher_length)
+# print('static_key:', static_key)
+# print('static_prefix:', static_prefix)
+# print('static_prefix length:', len(static_prefix))
+# print('static_insertion:', static_insertion)
+# print('static_index:', static_index)
 
-print(byte_byte_ECB(ECB_oracle, static_insertion, static_index))
+print('target bytes:', byte_byte_ECB(ECB_oracle, static_insertion, static_index))
