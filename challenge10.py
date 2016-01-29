@@ -4,7 +4,6 @@
 
 import binascii
 from Crypto.Cipher import AES
-from Crypto import Random
 
 key = b'YELLOW SUBMARINE'
 IV = b'0' * 16
@@ -14,4 +13,3 @@ with open('10.txt') as fo:
 	encrypted = binascii.a2b_base64(fo.read())
 
 print(cipher.decrypt(encrypted))
-
