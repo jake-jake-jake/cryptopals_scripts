@@ -24,6 +24,7 @@ def CBC_encrypt_oracle(byte_string):
 def find_admin(byte_string):
     cipher = AES.new(static_key, AES.MODE_CBC, static_IV)
     decrypted = cipher.decrypt(ciphertext=byte_string)
+    print('DEBUG: decrypted cipher:', decrypted)
     if b';admin=true;' in decrypted:
         return True 
     else:
@@ -31,17 +32,24 @@ def find_admin(byte_string):
 
 def bit_flip_CBC(CBC_cipher, target_bytes, target_block, b_l=16):
     ''' Flip bits in CBC cipher to produce target bytes at target block.'''
-    target_block = CBC_cipher[b_l * target_block: b_l * (target_block + 1)]
-    # insert_block = [target_block ^ target_block]
-    # return (CBC_cipher[: b_l * (target_block - 1)] + 
-    #         insert_block + 
-    #         CBC_cipher[b_l * target_block:])
-    pass
+    print('DEBUG: CBC_cipher before flipping, len\n', CBC_cipher, len(CBC_cipher))
+    bytes_to_change = CBC_cipher[b_l * target_block: b_l * (target_block + 1)]
+    print('DEBUG: bytes_to_change: ')
+    print('DEBUG: Len bytes_to_change and target_bytes:', len(bytes_to_change), len(target_bytes))
+    insert_block = bytes([a ^ b for a, b in zip(target_bytes, bytes_to_change)])
+    print(insert_block)
+    flipped_cipher = CBC_cipher[:(target_block - 1) * b_l] + insert_block + CBC_cipher[target_block * b_l:]
+    print('DEBUG: flipped_cipher, len\n', flipped_cipher, len(flipped_cipher))
+    return flipped_cipher
 
 test = b'this=this=admin;hahahaha'
 static_key = os.urandom(16)
 static_IV = os.urandom(16)
+insertion_goal = b';admin=true;\x00\x00\x00\x00'
+attack_insertion = b''
 
+attack_cipher = CBC_encrypt_oracle(attack_insertion)
+print('DEBUG: cipher before attack', find_admin(attack_cipher))
+bit_flipped_cipher = bit_flip_CBC(attack_cipher, insertion_goal, 3)
 
-print(CBC_encrypt_oracle(test))
-print(find_admin(CBC_encrypt_oracle(test)))
+print('Attack was a success:', find_admin(bit_flipped_cipher))
