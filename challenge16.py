@@ -50,6 +50,6 @@ attack_insertion = b''
 
 attack_cipher = CBC_encrypt_oracle(attack_insertion)
 print('DEBUG: cipher before attack', find_admin(attack_cipher))
-bit_flipped_cipher = bit_flip_CBC(attack_cipher, insertion_goal, 3)
+bit_flipped_cipher = bit_flip_CBC(attack_cipher, insertion_goal, 2)
 
 print('Attack was a success:', find_admin(bit_flipped_cipher))
