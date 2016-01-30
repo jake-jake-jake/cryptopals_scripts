@@ -29,7 +29,14 @@ def find_admin(byte_string):
     else:
         return False
 
-
+def bit_flip_CBC(CBC_cipher, target_bytes, target_block, b_l=16):
+    ''' Flip bits in CBC cipher to produce target bytes at target block.'''
+    target_block = CBC_cipher[b_l * target_block: b_l * (target_block + 1)]
+    # insert_block = [target_block ^ target_block]
+    # return (CBC_cipher[: b_l * (target_block - 1)] + 
+    #         insert_block + 
+    #         CBC_cipher[b_l * target_block:])
+    pass
 
 test = b'this=this=admin;hahahaha'
 static_key = os.urandom(16)
