@@ -33,11 +33,11 @@ def find_admin(byte_string):
 def bit_flip_CBC(CBC_cipher, target_bytes, target_block, b_l=16):
     ''' Flip bits in CBC cipher to produce target bytes at target block.'''
     print('DEBUG: CBC_cipher before flipping, len\n', CBC_cipher, len(CBC_cipher))
-    bytes_to_change = CBC_cipher[b_l * target_block: b_l * (target_block + 1)]
-    print('DEBUG: bytes_to_change: ')
-    print('DEBUG: Len bytes_to_change and target_bytes:', len(bytes_to_change), len(target_bytes))
+    bytes_to_change = CBC_cipher[b_l * (target_block - 1): b_l * target_block]
+    print('DEBUG: bytes_to_change: ', bytes_to_change)
+    # print('DEBUG: Len bytes_to_change and target_bytes:', len(bytes_to_change), len(target_bytes))
     insert_block = bytes([a ^ b for a, b in zip(target_bytes, bytes_to_change)])
-    print(insert_block)
+    print('DEBUG: insert_block, len:', insert_block, len(insert_block))
     flipped_cipher = CBC_cipher[:(target_block - 1) * b_l] + insert_block + CBC_cipher[target_block * b_l:]
     print('DEBUG: flipped_cipher, len\n', flipped_cipher, len(flipped_cipher))
     return flipped_cipher
