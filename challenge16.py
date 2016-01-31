@@ -4,11 +4,18 @@
 
 import os
 from Crypto.Cipher import AES
+from cryptotools import bytes_xor
 
 def PKCS7_pad(data, block_length):
     ''' Pad data with PKCS7 padding.'''
     padding = block_length - (len(data) % block_length)
     return (data + bytes([padding])*padding)
+
+def PKCS7_unpad(data):
+    ''' Remove PKCS7 padding.'''
+    if data[-1] == 0 or not len(set(data[-data[-1]:])) == 1:
+        raise ValueError('Invalid padding.')
+    return data[:len(data)-data[-1]]
 
 def CBC_encrypt_oracle(byte_string):
     prefix = b'comment1=cooking%20MCs;userdata='
@@ -23,33 +30,31 @@ def CBC_encrypt_oracle(byte_string):
 
 def find_admin(byte_string):
     cipher = AES.new(static_key, AES.MODE_CBC, static_IV)
-    decrypted = cipher.decrypt(ciphertext=byte_string)
+    decrypted = PKCS7_unpad(cipher.decrypt(ciphertext=byte_string))
     print('DEBUG: decrypted cipher:', decrypted)
     if b';admin=true;' in decrypted:
         return True 
     else:
         return False
 
-def bit_flip_CBC(CBC_cipher, target_bytes, target_block, b_l=16):
+def bit_flip_CBC(CBC_oracle, target_bytes, target_block, b_l=16):
     ''' Flip bits in CBC cipher to produce target bytes at target block.'''
-    print('DEBUG: CBC_cipher before flipping, len\n', CBC_cipher, len(CBC_cipher))
-    bytes_to_change = CBC_cipher[b_l * (target_block - 1): b_l * target_block]
-    print('DEBUG: bytes_to_change: ', bytes_to_change)
-    # print('DEBUG: Len bytes_to_change and target_bytes:', len(bytes_to_change), len(target_bytes))
-    insert_block = bytes([a ^ b for a, b in zip(target_bytes, bytes_to_change)])
-    print('DEBUG: insert_block, len:', insert_block, len(insert_block))
-    flipped_cipher = CBC_cipher[:(target_block - 1) * b_l] + insert_block + CBC_cipher[target_block * b_l:]
-    print('DEBUG: flipped_cipher, len\n', flipped_cipher, len(flipped_cipher))
+    insertion = b'Z' * 16 
+    work_cipher = CBC_oracle(insertion)
+    plaintext_to_be_flipped = b';comment2=%20lik'
+    insertion_cipher_block = work_cipher[32:48]
+    bytes_to_produce_target = bytes_xor(plaintext_to_be_flipped, target_bytes)
+    flipped_bits = bytes_xor(insertion_cipher_block, bytes_to_produce_target)
+    flipped_cipher = work_cipher[:32] + flipped_bits + work_cipher[48:]    
+    print('flipped_cipher, len:', flipped_cipher, len(flipped_cipher))
+
     return flipped_cipher
 
 test = b'this=this=admin;hahahaha'
 static_key = os.urandom(16)
 static_IV = os.urandom(16)
-insertion_goal = b';admin=true;\x00\x00\x00\x00'
-attack_insertion = b''
+insertion_goal = b';admin=true;ZZZZ'
 
-attack_cipher = CBC_encrypt_oracle(attack_insertion)
-print('DEBUG: cipher before attack', find_admin(attack_cipher))
-bit_flipped_cipher = bit_flip_CBC(attack_cipher, insertion_goal, 2)
+bit_flipped_cipher = bit_flip_CBC(CBC_encrypt_oracle, insertion_goal, 3)
 
 print('Attack was a success:', find_admin(bit_flipped_cipher))
