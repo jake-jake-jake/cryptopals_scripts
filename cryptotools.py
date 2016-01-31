@@ -15,10 +15,10 @@ def hex_to_bytes(hex_string):
     return bytes.fromhex(hex_string)
 
 def bytes_xor(a, b):
-    ''' Xor two bit strings of equal length.'''
+    ''' Xor two bytestrings of equal length.'''
     if len(a) != len(b):
         raise ValueError('Xored bytestrings must be of equal length.')
-    return bytes(x ^ y for x, y in zip(a, b))
+    return b''.join([bytes([x ^ y]) for x, y in zip(a, b)])
 
 def bytes_to_base64(b):
     return binascii.b2a_base64(b)
