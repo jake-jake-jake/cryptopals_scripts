@@ -167,3 +167,9 @@ def PKCS7_pad(data, block_length):
     ''' Pad data with PKCS7 padding.'''
     padding = block_length - (len(data) % block_length)
     return (data + bytes([padding])*padding)
+
+def PKCS7_unpad(data):
+    ''' Remove PKCS7 padding.'''
+    if data[-1] == 0 or not len(set(data[-data[-1]:])) == 1:
+        raise ValueError('Invalid padding.')
+    return data[:len(data)-data[-1]]
