@@ -31,7 +31,6 @@ def CBC_encrypt_oracle(byte_string):
 def find_admin(byte_string):
     cipher = AES.new(static_key, AES.MODE_CBC, static_IV)
     decrypted = PKCS7_unpad(cipher.decrypt(ciphertext=byte_string))
-    print('DEBUG: decrypted cipher:', decrypted)
     if b';admin=true;' in decrypted:
         return True 
     else:
@@ -39,21 +38,24 @@ def find_admin(byte_string):
 
 def bit_flip_CBC(CBC_oracle, target_bytes, target_block, b_l=16):
     ''' Flip bits in CBC cipher to produce target bytes at target block.'''
-    insertion = b'Z' * 16 
+    insertion = bytes(16)
     work_cipher = CBC_oracle(insertion)
+    # We know this is the plaintext; if we didn't, we would double our Z insertion.
     plaintext_to_be_flipped = b';comment2=%20lik'
+    # The zero point that produced our known plaintext is this block; we need 
+    # to treat it as the base from which we work.
     insertion_cipher_block = work_cipher[32:48]
+    # Find the xor product of the target and known plaintext.
     bytes_to_produce_target = bytes_xor(plaintext_to_be_flipped, target_bytes)
+    # Combine that product with the base cipherblock.
     flipped_bits = bytes_xor(insertion_cipher_block, bytes_to_produce_target)
     flipped_cipher = work_cipher[:32] + flipped_bits + work_cipher[48:]    
-    print('flipped_cipher, len:', flipped_cipher, len(flipped_cipher))
-
     return flipped_cipher
 
 test = b'this=this=admin;hahahaha'
 static_key = os.urandom(16)
 static_IV = os.urandom(16)
-insertion_goal = b';admin=true;ZZZZ'
+insertion_goal = b';admin=true;p0wn'
 
 bit_flipped_cipher = bit_flip_CBC(CBC_encrypt_oracle, insertion_goal, 3)
 
