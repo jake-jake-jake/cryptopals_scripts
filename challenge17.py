@@ -39,13 +39,32 @@ def check_padding_CBC(ciphertext, instance_IV):
 def make_work_blocks(ciphertext, IV):
     ''' Return list of two block sections of CBC ciphertext.'''
     concatenated = IV + ciphertext
-    print('DEBUG: length of ciphtertext, blocks', len(ciphertext), len(concatenated))
+    print('DEBUG in make_work_blocks:\nlength of ciphtertext, blocks', len(ciphertext), len(concatenated))
     return [concatenated[i:i+32] for i in range(0, len(concatenated)-16, 16)]
+
+def find_valid_padding_bytes(work_block, padding_oracle):
+    ''' Iterate through all final last bytes of first block to find valid padding.'''
+    print('DEBUG in find_valid_padding_bytes:\nlength of work_block', len(work_block))
+    prefix = work_block[:15]
+    possibles = [prefix + bytes([i]) for i in range(256)]
+    print('DEBUG in find_valid_padding_bytes:\n length of possibles', len(possibles))
+    for possible in possibles:
+        if padding_oracle(work_block[16:], possible):
+            print(possible[15])
+    pass
+
+def decrypt_block(work_block, padding_oracle):
+    ''' Working from padding_oracle output, decrypt second block of CBC block pair.'''
+    pass
 
 def attack_CBC_via_padding_oracle(ciphertext, instance_IV):
     ''' Using instance_IV and padding oracle, decrypt ciphertext.'''
     work_blocks = make_work_blocks(ciphertext, instance_IV)
     print(work_blocks)
+    for block in work_blocks:
+        print('Trying block now:\n {}'.format(block))
+        find_valid_padding_bytes(block, check_padding_CBC)
+
 
 static_key = os.urandom(16)
 encrypted, this_IV = random_string_CBC(static_key)
