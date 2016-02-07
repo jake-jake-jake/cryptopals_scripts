@@ -36,10 +36,20 @@ def check_padding_CBC(ciphertext, instance_IV):
     else:
         return True
 
+def make_work_blocks(ciphertext, IV):
+    ''' Return list of two block sections of CBC ciphertext.'''
+    concatenated = IV + ciphertext
+    print('DEBUG: length of ciphtertext, blocks', len(ciphertext), len(concatenated))
+    return [concatenated[i:i+32] for i in range(0, len(concatenated)-16, 16)]
+
+def attack_CBC_via_padding_oracle(ciphertext, instance_IV):
+    ''' Using instance_IV and padding oracle, decrypt ciphertext.'''
+    work_blocks = make_work_blocks(ciphertext, instance_IV)
+    print(work_blocks)
+
 static_key = os.urandom(16)
-
 encrypted, this_IV = random_string_CBC(static_key)
-print(check_padding_CBC(encrypted, this_IV))
 
+attack_CBC_via_padding_oracle(encrypted, this_IV)
 
 
