@@ -1,4 +1,8 @@
+#!/usr/bin/env python3
+
+import binascii
 import os 
+
 from cryptotools import PKCS7_pad, PKCS7_unpad
 from Crypto.Cipher import AES
 from random import choice
@@ -17,9 +21,9 @@ def random_string_CBC(key):
     'MDAwMDA4b2xsaW4nIGluIG15IGZpdmUgcG9pbnQgb2g=',
     'MDAwMDA5aXRoIG15IHJhZy10b3AgZG93biBzbyBteSBoYWlyIGNhbiBibG93']
     instance_IV = os.urandom(16)
-    plaintext = choice(strings)
+    plaintext = binascii.a2b_base64(choice(strings))
     cipher = AES.new(key, AES.MODE_CBC, instance_IV)
-    return (cipher.encrypt(PKCS7_pad(bytes(plaintext, encoding='utf-8'), 16)), instance_IV)
+    return (cipher.encrypt(PKCS7_pad(plaintext, encoding='utf-8'), 16)), instance_IV)
 
 def check_padding_CBC(ciphertext, instance_IV):
     ''' Return True if ciphertext has valid PKCS7 padding.'''
