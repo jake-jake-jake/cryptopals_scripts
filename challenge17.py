@@ -3,6 +3,7 @@
 import binascii
 import os 
 
+from copy import deepcopy
 from cryptotools import PKCS7_pad, PKCS7_unpad
 from Crypto.Cipher import AES
 from random import choice
@@ -42,61 +43,62 @@ def make_work_blocks(ciphertext, IV):
     print('DEBUG in make_work_blocks:\nlength of ciphtertext, blocks', len(ciphertext), len(concatenated))
     return [concatenated[i:i+32] for i in range(0, len(concatenated)-16, 16)]
 
-def validate_single_padding_block(cipherblock, IV, padding_oracle):
-    pass
-
-def update_known_padding(pad):
-    ''' Return bytes should produce one more valid byte of PKCS7 padding when
-        tried against values for next byte in IV. '''
-    return [bytes([a ^ b] for a,b in zip(pad, bytes([len(pad)]) * len(pad)))]
-
-
-def find_valid_padding_bytes(work_block, padding_oracle, pad_bytes = []):
-    ''' Iterate through IV bytes to find valid padding, beginning with last byte.'''
-    print('DEBUG in find_valid_padding_bytes:\nlength of work_block', len(work_block))
-    # Prefix length is one less than the length of pad_bytes. On first
-    # run, this will be an empty list and so working on the last byte.
-    prefix = work_block[:16-len(pad_bytes)-1]
-    new_known_bytes = update_known_padding(pad_bytes)
-    possible_IVs = [prefix + bytes([i]) + b''.join(reversed(new_known_bytes)) for i in range(256)]
-    print('DEBUG in find_valid_padding_bytes:\n length of possibles', len(possible_IVs))
-    for IV in possible_IVs:
-        if padding_oracle(work_block[16:], IV):
-            print(IV[:16-len(pad_bytes)-1])
-            new_known_bytes.append(IV[:16-len(pad_bytes)-1])
-            break
+def find_work_byte(target, IV, padding_oracle):
+    ''' Change one byte of IV at a time to determine padding length and
+        then return byte to work.'''
+    index_byte = 0
+    IV_copy = list(IV)
+    while padding_oracle(target, bytes(IV_copy)):
+        IV_copy[index_byte] = (IV_copy[index_byte] + 1) % 256
+        index_byte += 1
     else:
-        print('DEBUG: Unable to find valid padding byte')
-        return prefix + b''.join(reversed(new_known_bytes))
+        return index_byte - 1
 
-    # if len(work_list) > 1:
-    #     print('DEBUG: Multiple possible valid padding bytes; must pass the choices to a function to find the valid \\x01 byte.')
-    # elif len(work_list) == 1:
-    #     pad_bytes.append(work_list[0])
-    # else: 
-    #     print('DEBUG: Unable to find valid padding byte.')
-    if len(new_known_bytes) < 16:
-        new_work_block = prefix + b''.join(reversed(new_known_bytes)) + work_block[16:]
-        return find_valid_padding_bytes(new_work_block, padding_oracle, new_known_bytes)
+def xor_previous_suffix(suffix):
+    ''' Xor suffix bytes to prepare it to produce additional pad byte.'''
+    first_xor = b''.join([bytes([a ^ b])
+                    for a, b
+                    in zip(suffix, bytes([len(suffix)] * len(suffix)))])
+    return b''.join([bytes([a ^ b])
+                    for a, b
+                    in zip(first_xor, bytes([len(suffix) + 1] * len(suffix)))])
 
-    if len(passed_bytes) == 16:
-        return b''.join(reversed(passed_bytes)) 
+def decrypt_block_via_padding(target, IV, padding_oracle, work_byte = 15):
+    ''' Decrypt a CBC block using an arbitrary IV and a padding oracle.'''
+    prefix = IV[:work_byte-1]
+    try: 
+        suffix = IV[work_byte + 1:]
+        suffix = xor_previous_suffix(suffix)
+    except IndexError:
+        suffix = b''
+    possible_IVs = [prefix + bytes([b]) + suffix for b in range(256)]
+    # for possible_IV in possible_IVs:
+    # When this is done we want to return the final block of the IV, xored
+    # against a full block of padding bytes, which will produce the plaintext.
+    return None
 
 
-def decrypt_block(work_block, padding_oracle):
-    ''' Working from padding_oracle output, decrypt second block of CBC block pair.'''
-    pass
 
 def attack_CBC_via_padding_oracle(ciphertext, instance_IV):
     ''' Using instance_IV and padding oracle, decrypt ciphertext.'''
     work_blocks = make_work_blocks(ciphertext, instance_IV)
     # print(work_blocks)
     for block in work_blocks:
-        print('Trying block now:\n {}'.format(block))
-        find_valid_padding_bytes(block, check_padding_CBC)
+        target, IV = block[16:], block[:16]
+        # Not the most elegant way to split up the block, but it works.
+#        find_valid_padding_bytes(target, IV, check_padding_CBC)
+    pass
 
 
 static_key = os.urandom(16)
+test_IV = os.urandom(16)
+CBC_encrypt_cipher = AES.new(static_key, mode=2, IV=test_IV)
+CBC_decrypt_cipher = AES.new(static_key, mode=2, IV=test_IV)
 encrypted, this_IV = random_string_CBC(static_key)
 
-attack_CBC_via_padding_oracle(encrypted, this_IV)
+admin_bytes = b'admin'
+encrypted_admin = CBC_encrypt_cipher.encrypt(PKCS7_pad(admin_bytes, 16))
+decrypted_admin = CBC_decrypt_cipher.decrypt(encrypted_admin)
+
+print(decrypted_admin)
+print(find_work_byte(encrypted_admin, test_IV, check_padding_CBC))
