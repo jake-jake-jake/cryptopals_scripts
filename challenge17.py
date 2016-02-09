@@ -85,7 +85,7 @@ def CBC_pad_decrypt(target, IV, padding_oracle, work_byte = 15):
         print('DEBUG: returning suffix of length 16.')
         return b''.join([bytes([a ^ b])
                        for a, b
-                       in zip(suffix, [16] * 16)])
+                       in zip(suffix, b'\x10' * 16)])
     else:
         suffix = xor_previous_suffix(suffix)
 
@@ -106,15 +106,15 @@ def attack_CBC_via_padding_oracle(ciphertext, instance_IV):
     for block in work_blocks:
         target, IV = block[16:], block[:16]
         # Not the most elegant way to split up the block, but it works.
-        decrypted.append(CBC_pad_decrypt(target, IV, check_padding_CBC))
+        modified_IV = CBC_pad_decrypt(target, IV, check_padding_CBC)
+        decrypted.append(b''.join([bytes([a ^ b])
+                         for a,b 
+                         in zip(modified_IV, IV)]))
     return b''.join(decrypted)
 
 
 static_key = os.urandom(16)
-encrypted, this_IV = controlled_string_CBC(static_key)
+encrypted, this_IV = random_string_CBC(static_key)
 
 CBC_decryption = attack_CBC_via_padding_oracle(encrypted, this_IV)
 print(CBC_decryption)
-print(b''.join([bytes([a ^ b])
-                for a,b 
-                in zip(CBC_decryption, b'x\16' * len(CBC_decryption))]))
