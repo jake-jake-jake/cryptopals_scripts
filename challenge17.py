@@ -76,19 +76,19 @@ def CBC_pad_decrypt(target, IV, padding_oracle, work_byte = 15):
     print('DEBUG: length of prefix', len(prefix))
     try: 
         suffix = IV[work_byte + 1:]
-        # If there is a whole block of valid padding, return that block xored
-        # a block of 16 bytes to recover plaintext.
-        print('DEBUG: suffix byte', suffix)
-        if len(suffix) == 16:
-            print('DEBUG: returning suffix of length 16.')
-            return b''.join([bytes([a ^ b])
-                           for a, b
-                           in zip(suffix, target)])
-        else:
-            suffix = xor_previous_suffix(suffix)
     except IndexError:
-        print('First byte of block.')
         suffix = b''
+    # If there is a whole block of valid padding, return that block xored
+    # a block of 16 bytes to recover plaintext.
+    print('DEBUG: suffix bytes, len', suffix, len(suffix))
+    if len(suffix) == 16:
+        print('DEBUG: returning suffix of length 16.')
+        return b''.join([bytes([a ^ b])
+                       for a, b
+                       in zip(suffix, [16] * 16)])
+    else:
+        suffix = xor_previous_suffix(suffix)
+
     possible_IVs = [prefix + bytes([b]) + suffix for b in range(256)]
     for possible_IV in possible_IVs:
         if padding_oracle(target, possible_IV):
