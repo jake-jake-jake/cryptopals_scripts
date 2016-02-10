@@ -47,7 +47,6 @@ def check_padding_CBC(ciphertext, instance_IV):
 def make_work_blocks(ciphertext, IV):
     ''' Return list of two block sections of CBC ciphertext.'''
     concatenated = IV + ciphertext
-    print('DEBUG in make_work_blocks:\nlength of ciphtertext, blocks', len(ciphertext), len(concatenated))
     return [concatenated[i:i+32] for i in range(0, len(concatenated)-16, 16)]
 
 def find_work_byte(target, IV, padding_oracle):
@@ -73,16 +72,13 @@ def xor_previous_suffix(suffix):
 def CBC_pad_decrypt(target, IV, padding_oracle, work_byte = 15):
     ''' Decrypt a CBC block using an arbitrary IV and a padding oracle.'''
     prefix = IV[:work_byte]
-    print('DEBUG: length of prefix', len(prefix))
     try: 
         suffix = IV[work_byte + 1:]
     except IndexError:
         suffix = b''
     # If there is a whole block of valid padding, return that block xored
-    # a block of 16 bytes to recover plaintext.
-    print('DEBUG: suffix bytes, len', suffix, len(suffix))
+    # vs a block of 16 bytes to recover plaintext.
     if len(suffix) == 16:
-        print('DEBUG: returning suffix of length 16.')
         return b''.join([bytes([a ^ b])
                        for a, b
                        in zip(suffix, b'\x10' * 16)])
@@ -93,10 +89,9 @@ def CBC_pad_decrypt(target, IV, padding_oracle, work_byte = 15):
     for possible_IV in possible_IVs:
         if padding_oracle(target, possible_IV):
             index = find_work_byte(target, possible_IV, padding_oracle)
-            print('DEBUG: Index byte', index)
             return CBC_pad_decrypt(target, possible_IV, padding_oracle, index)
     else:
-        print('DEBUG: No possible_IV passed oracle check. There is a problem')
+        print('No possible_IV passed oracle check. There is a problem.')
         return None
 
 def attack_CBC_via_padding_oracle(ciphertext, instance_IV):
@@ -107,6 +102,8 @@ def attack_CBC_via_padding_oracle(ciphertext, instance_IV):
         target, IV = block[16:], block[:16]
         # Not the most elegant way to split up the block, but it works.
         modified_IV = CBC_pad_decrypt(target, IV, check_padding_CBC)
+        # Modified_IV must be xored against the initial IV to recover the
+        # plaintext.
         decrypted.append(b''.join([bytes([a ^ b])
                          for a,b 
                          in zip(modified_IV, IV)]))
@@ -117,4 +114,4 @@ static_key = os.urandom(16)
 encrypted, this_IV = random_string_CBC(static_key)
 
 CBC_decryption = attack_CBC_via_padding_oracle(encrypted, this_IV)
-print(CBC_decryption)
+print(PKCS7_unpad(CBC_decryption))
