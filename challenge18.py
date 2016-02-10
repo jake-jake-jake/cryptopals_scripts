@@ -7,15 +7,15 @@ from Crypto.Cipher import AES
 from Crypto.Util import Counter
 import struct
 
+
 def decrypt_AES_CTR(key, nonce, ciphertext):
-    ctr = Counter.new(64, prefix = nonce, little_endian=True, initial_value=0)
+    ctr = Counter.new(64, prefix=nonce, little_endian=True, initial_value=0)
     cipher = AES.new(key=key, mode=AES.MODE_CTR, counter=ctr)
     return cipher.decrypt(ciphertext)
 
+
 def encrypt_AES_CTR(key, nonce, plaintext):
     ctr = Counter.new(64, initial_value=0, little_endian=True, prefix=nonce)
-    print(ctr)
-    print(ctr)
     cipher = AES.new(key=key, mode=AES.MODE_CTR, counter=ctr)
     return cipher.encrypt(plaintext)
 
@@ -26,4 +26,3 @@ encrypted = 'L77na/nrFsKvynd6HzOoG7GHTLXsTVu9qvY/2syLXzhPweyyMTJULu/6/kXX0KSvoOL
 encrypted_bytes = binascii.a2b_base64(encrypted)
 
 print('encrypted_bytes:', decrypt_AES_CTR(static_key, nonce, encrypted_bytes))
-
