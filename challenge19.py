@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
 import binascii
-from Crypto.Cipher import AES
-from Crypto.Util import Counter
 import struct
 import os
+
+from Crypto.Cipher import AES
+from Crypto.Util import Counter
+from cryptotools import check_chars as score_freqs
 
 PLAINTEXTS = ['SSBoYXZlIG1ldCB0aGVtIGF0IGNsb3NlIG9mIGRheQ==',
               'Q29taW5nIHdpdGggdml2aWQgZmFjZXM=',
@@ -66,8 +68,30 @@ def make_ciphers(encrypt_func, key, nonce_or_IV, base64_plaintexts):
     return [encrypt_func(key, nonce_or_IV, binascii.a2b_base64(plaintext))
             for plaintext in base64_plaintexts]
 
+
+def concatenate_nonce_slices(list_ciphers):
+    ''' Create a list of indexed cipher-litters for frequency analysis.'''
+    slices = [cipher[i::16] for i in range(8) for cipher in list_ciphers]
+    return [b''.join(slices[i::8]) for i in range(8)]
+
+def single_byte_xor(byte_literal, i):
+    ''' Xor byte_literal against i.'''
+    return b''.join(bytes([a ^ b]) for a,b 
+                    in zip(byte_literal, bytes([i]) * len(byte_literal)))
+
+def score_bytes_by_nonce_index(nonce_indices):
+    ''' Return 5 highest scores for frequency for each nonce byte.'''
+    scores = []
+    for index in nonce_indices:
+        byte_scores = [(bytes([i]), score_freqs(single_byte_xor(index, i))) for i in range(256)]
+        byte_scores.sort(key=lambda x: x[1], reverse=True)
+        scores.append(byte_scores[:5])
+    return scores
+
+
 static_key = os.urandom(16)
 nonce = struct.pack('<Q', 0)
 
 list_of_ciphers = make_ciphers(encrypt_AES_CTR, static_key, nonce, PLAINTEXTS)
-print([decrypt_AES_CTR(static_key, nonce, cipher) for cipher in list_of_ciphers])
+nonce_slices = concatenate_nonce_slices(list_of_ciphers)
+possible_key_stream = score_bytes_by_nonce_index(nonce_slices)
