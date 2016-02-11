@@ -58,4 +58,3 @@ if __name__ == '__main__':
             print('Potential key:\n{}\nDecryption:\n{}'.format(''.join(pot_lets), attempt))
         else:
             print('Key length of {} does not produce match on most likely letters.'.format(key_len))
-
