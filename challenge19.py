@@ -3,6 +3,7 @@
 import binascii
 import struct
 import os
+import cryptotools as ct
 
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
@@ -99,8 +100,27 @@ def score_bytes(byte_indices):
     return scores
 
 
-def try_likely_bytes():
-    pass
+def try_likely_bytes(possible_key_bytes, list_of_ciphers):
+    ''' Xor the Cartesian product of 5 most likely key-stream bytes against
+        ciphers, if an English sentence is detected, return decryption.'''
+    min_len = min([len(cipher) for cipher in list_of_ciphers])
+    possible_key_streams = product(*possible_key_bytes)
+    # dictionary = ct.load_dictionary()
+    # for key_stream in possible_key_streams:
+    #     print('DEBUG: key_stream:', key_stream)
+    #     concat = b''.join(key_stream)
+    #     for cipher in list_of_ciphers:
+    #         decryption = b''.join([bytes([a ^ b]) for a,b 
+    #                               in zip(cipher, concat)])
+    #         if ct.is_language(decryption, dictionary):
+    #             print('Likely key stream found.')
+    #             return key_stream
+    # else:
+    #     print('Unable to find key stream.')
+    #     return None
+    for key_stream in possible_key_streams:
+        print([ct.bytes_xor(cipher[:min_len], key_stream) for cipher in list_of_ciphers])
+
 
 
 static_key = os.urandom(16)
@@ -109,3 +129,12 @@ nonce = struct.pack('<Q', 0)
 list_of_ciphers = make_ciphers(encrypt_AES_CTR, static_key, nonce, PLAINTEXTS)
 nonce_slices = concatenate_nonce_slices(list_of_ciphers)
 possible_key_stream = score_bytes(nonce_slices)
+likely_key_stream = try_likely_bytes(possible_key_stream, list_of_ciphers)
+
+if likely_key_stream:
+    print([b''.join(bytes([a ^ b])
+           for cipher in list_of_ciphers
+           for a,b 
+           in zip(cipher, likely_key_stream))])
+
+
