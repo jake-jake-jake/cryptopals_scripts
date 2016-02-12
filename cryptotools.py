@@ -1,18 +1,17 @@
 # cryptotools
 
 import binascii
-import collections 
-import itertools 
+import itertools
 import random
-import string
 
 
 COMMON_ENGLISH_LETTERS = 'ETAOIN SHRDLU'
 
+
 def hex_to_bytes(hex_string):
-    ''' Return bytes object from hexadecimal string. 
-        This is a wrapper function, and likely unnecessary '''
+    ''' Return bytes object from hexadecimal string.'''
     return bytes.fromhex(hex_string)
+
 
 def bytes_xor(a, b):
     ''' Xor two bytestrings of equal length.'''
@@ -20,14 +19,18 @@ def bytes_xor(a, b):
         raise ValueError('Xored bytestrings must be of equal length.')
     return b''.join([bytes([x ^ y]) for x, y in zip(a, b)])
 
+
 def bytes_to_base64(b):
     return binascii.b2a_base64(b)
+
 
 def base64_to_bytes(b64):
     return binascii.a2b_base64(b64)
 
+
 def bytes_to_hex(b):
     return bytes.hex(b)
+
 
 def cycle_xor(pt, key):
     ''' Xors a plaintext or ciphertext against a key, cycling on end of key.'''
@@ -38,6 +41,8 @@ def cycle_xor(pt, key):
 # Following functions used for calculating Hamming distance in bits.
 # I borrowed the the core operand (z &= z -1) from the internet, which
 # borrowed it from a 1960s compsci paper.
+
+
 def hamming_distance(a, b):
     '''Return bitwise Hamming distance between equal length strings'''
     if len(a) != len(b):
@@ -49,16 +54,18 @@ def hamming_distance(a, b):
         z = ch1 ^ ch2
         while z:
             count += 1
-            z &= z - 1 # This is pretty brilliant.
+            z &= z - 1  # This is pretty brilliant.
     return count
 
-def hamming_slices(string, keysize, start_block = 0):
+
+def hamming_slices(string, keysize, start_block=0):
     ''' Return bitwise hamming distance of the two blocks of keysize length.
         Defaults to index 0; can be keyed to subsequent blocks.'''
-    index = keysize * start_block 
+    index = keysize * start_block
     slice_a = string[index: index + keysize]
     slice_b = string[index + keysize: index + keysize * 2]
-    return hamming_distance(slice_a, slice_b) 
+    return hamming_distance(slice_a, slice_b)
+
 
 def random_hamming(string, keysize):
     ''' Return bitwise hamming distance of two random blocks of keysize length.'''
@@ -74,9 +81,8 @@ def slice_string_by_block(string, keysize):
     subs = []
     for _ in range(keysize):
         subs.append(string[_::keysize])
-    return subs 
+    return subs
 
-   
 # Loads a dictionary to check cipher hacks against. In the main() function, defaults to
 # loading the dictionary.txt provided with Hacking Ciphers with Python
 def load_dictionary(file_name = None):
@@ -95,17 +101,20 @@ def load_dictionary(file_name = None):
 # Eventually I will replace with polyglot integration to expand language functionality.
 def is_language(string, dictionary, word_percentage = 20, letter_percentage = 85):
     ''' Checks if string is a language by comparing words in string with
-        loaded dictionary. Returns true if given percentage of word matches 
+        loaded dictionary. Returns true if given percentage of word matches
         and letters in string is high enough. Default values: word_percentage
         is 20 and letter_percentage is 85. '''
     word_match = (get_dictionary_percentage(string, dictionary) * 100) >= word_percentage
     sufficient_letters = (len(strip_string(string))/len(string) * 100) >= letter_percentage
     return word_match and sufficient_letters
 
+
 def strip_string(string):
     ''' Removes nonalphabetic characters from string, preserving spaces. '''
-    stripped_string = [char for char in string if char.isalpha() or char in ' \t\n']
+    stripped_string = [char for char in string
+                       if char.isalpha() or char in ' \t\n']
     return ''.join(stripped_string)
+
 
 def get_dictionary_percentage(string, dictionary):
     ''' Returns a float conveying percentage of dictionary words in 
@@ -123,8 +132,6 @@ def get_dictionary_percentage(string, dictionary):
 
 # The functions are used to test the likelihood of slices of a ciphertext to see if the xored
 # key byte produces plaintext with a likely-to-be-English distribution of chars.
-
-
 def check_chars(candidate_string):
     ''' Return a score of an xor attempt using letter frequencies as points'''
     score = 0
@@ -172,6 +179,7 @@ def PKCS7_pad(data, block_length):
     ''' Pad data with PKCS7 padding.'''
     padding = block_length - (len(data) % block_length)
     return (data + bytes([padding])*padding)
+
 
 def PKCS7_unpad(data):
     ''' Remove PKCS7 padding.'''
