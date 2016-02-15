@@ -94,7 +94,8 @@ def score_bytes(byte_indices):
     ''' Return 5 highest scores for frequency for each byte.'''
     scores = []
     for index in byte_indices:
-        byte_scores = [(bytes([i]), score_freqs(single_byte_xor(index, i))) for i in range(256)]
+        byte_scores = [(bytes([i]), score_freqs(single_byte_xor(index, i)))
+                       for i in range(256)]
         byte_scores.sort(key=lambda x: x[1], reverse=True)
         scores.append([byte for byte, score in byte_scores[:5]])
     return scores
@@ -105,21 +106,21 @@ def try_likely_bytes(possible_key_bytes, list_of_ciphers):
         ciphers, if an English sentence is detected, return decryption.'''
     min_len = min([len(cipher) for cipher in list_of_ciphers])
     possible_key_streams = product(*possible_key_bytes)
-    # dictionary = ct.load_dictionary()
-    # for key_stream in possible_key_streams:
-    #     print('DEBUG: key_stream:', key_stream)
-    #     concat = b''.join(key_stream)
-    #     for cipher in list_of_ciphers:
-    #         decryption = b''.join([bytes([a ^ b]) for a,b 
-    #                               in zip(cipher, concat)])
-    #         if ct.is_language(decryption, dictionary):
-    #             print('Likely key stream found.')
-    #             return key_stream
-    # else:
-    #     print('Unable to find key stream.')
-    #     return None
+    dictionary = ct.load_dictionary()
     for key_stream in possible_key_streams:
-        print([ct.bytes_xor(cipher[:min_len], key_stream) for cipher in list_of_ciphers])
+        concat = b''.join(key_stream)
+        print('DEBUG: LENGTH OF KEY_STREAM', len(concat))
+        for cipher in list_of_ciphers:
+            work_cipher = cipher[:len(concat)]
+            print('DEBUG: work_cipher,', work_cipher)
+            decryption = b''.join([bytes([a ^ b]) for a,b 
+                                  in zip(cipher, concat)])
+            if ct.is_language(decryption, dictionary):
+                print('Likely key stream found.')
+                return concat
+    else:
+        print('Unable to find key stream.')
+        return None
 
 
 
@@ -132,9 +133,6 @@ possible_key_stream = score_bytes(nonce_slices)
 likely_key_stream = try_likely_bytes(possible_key_stream, list_of_ciphers)
 
 if likely_key_stream:
-    print([b''.join(bytes([a ^ b])
-           for cipher in list_of_ciphers
-           for a,b 
-           in zip(cipher, likely_key_stream))])
-
-
+    for cipher in list_of_ciphers:
+        work_cipher = cipher[:len(likely_key_stream)]
+        print(ct.bytes_xor(work_cipher, likely_key_stream))
