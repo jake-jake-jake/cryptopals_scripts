@@ -99,11 +99,15 @@ def load_dictionary(file_name = None):
 
 # The following three functions are used to clean an input to see if it is English.
 # Eventually I will replace with polyglot integration to expand language functionality.
-def is_language(string, dictionary, word_percentage = 20, letter_percentage = 85):
+def is_language(data, dictionary, word_percentage = 20, letter_percentage = 85):
     ''' Checks if string is a language by comparing words in string with
         loaded dictionary. Returns true if given percentage of word matches
         and letters in string is high enough. Default values: word_percentage
         is 20 and letter_percentage is 85. '''
+    try:
+        string = str(data)
+    except TypeError:
+        return False
     word_match = (get_dictionary_percentage(string, dictionary) * 100) >= word_percentage
     sufficient_letters = (len(strip_string(string))/len(string) * 100) >= letter_percentage
     return word_match and sufficient_letters
