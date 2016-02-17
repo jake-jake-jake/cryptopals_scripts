@@ -64,7 +64,7 @@ class Mersenne:
         output = output ^ ((output << 15) & 4022730752)
         output = self._get_intermediate_variable(output)
         output = self._recover_state(output)
-        return _int32(output)
+        return output
 
 this_time = int(time())
 my_twister = Mersenne(this_time)
