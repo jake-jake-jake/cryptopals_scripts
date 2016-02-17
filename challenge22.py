@@ -42,16 +42,16 @@ class Mersenne:
         self.index += 1
         return _int32(y)
 
-    def _untemper_first_shift(self, num):
-        ''' Return first intermediate variable for untempering MT output.'''
+    def _get_intermediate_variable(self, num):
+        ''' Return intermediate shift variable for untempering MT output.'''
         untemp = num
         for _ in range(5):
             untemp = untemp << 7
             untemp = num ^ (untemp & 2636928640)
         return untemp
 
-    def _untemper_second_shift(self, num):
-        ''' Return untempered MT state value from intermediate shift variable. '''
+    def _recover_state(self, num):
+        ''' Return untempered MT state from intermediate shift variable. '''
         state = num
         for _ in range(2):
             state = state >> 11
@@ -62,14 +62,14 @@ class Mersenne:
         ''' Return untempered state value from output.'''
         output = output ^ output >> 18
         output = output ^ ((output << 15) & 4022730752)
-        output = self._untemper_first_shift(output)
-        output = self._untemper_second_shift(output)
-        return output
+        output = self._get_intermediate_variable(output)
+        output = self._recover_state(output)
+        return _int32(output)
 
 this_time = int(time())
 my_twister = Mersenne(this_time)
-state_at_start = my_twister.state[0]
 number = my_twister.temper()
+state_at_start = my_twister.state[0]
 untempered_number = my_twister.untemper(number)
 
 print('this_time:', this_time)
