@@ -74,7 +74,6 @@ def make_ciphers(encrypt_func, key, nonce_or_IV, base64_plaintexts):
 def concatenate_nonce_slices(list_ciphers):
     ''' Create a list of indexed cipher-letters for frequency analysis.'''
     shortest_cipher = min([len(cipher) for cipher in list_ciphers])
-    print('DEBUG: shortest_cipher', shortest_cipher)
     slices = []
     for byte in range(shortest_cipher):
         work_literal = []
@@ -109,10 +108,8 @@ def try_likely_bytes(possible_key_bytes, list_of_ciphers):
     dictionary = ct.load_dictionary()
     for key_stream in possible_key_streams:
         concat = b''.join(key_stream)
-        print('DEBUG: LENGTH OF KEY_STREAM', len(concat))
         for cipher in list_of_ciphers:
             work_cipher = cipher[:len(concat)]
-            print('DEBUG: work_cipher,', work_cipher)
             decryption = b''.join([bytes([a ^ b]) for a,b 
                                   in zip(cipher, concat)])
             if ct.is_language(decryption, dictionary):
