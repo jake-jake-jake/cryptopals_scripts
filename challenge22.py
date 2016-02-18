@@ -2,6 +2,7 @@
 
 # Cryptopals Challenge #22, get seed from output of Mersenne Twister RNG
 # Detempering algos derived from Crypto 101 book
+from random import randint
 from time import time
 
 
@@ -66,13 +67,25 @@ class Mersenne:
         output = self._recover_state(output)
         return output
 
-this_time = int(time())
-my_twister = Mersenne(this_time)
-number = my_twister.temper()
-state_at_start = my_twister.state[0]
-untempered_number = my_twister.untemper(number)
 
-print('this_time:', this_time)
-print('first index value of my_twister:', state_at_start)
-print('number:', number)
-print('number run through untempering function:', untempered_number)
+def make_psuedo_random_nums():
+    seed_time = int(time()) - randint(40, 1000)
+    random_twister = Mersenne(seed_time)
+    return seed_time, random_twister.temper()
+
+
+def crack_Mersenne_seed(num):
+    now = int(time())
+    for i in range(10000):
+        test_my = Mersenne(now - i)
+        if test_my.temper() == num:
+            return now - i
+    else:
+        return None
+
+for num in range(1):
+    random_seed, number = make_psuedo_random_nums()
+    guess_seed = crack_Mersenne_seed(number)
+    if guess_seed == random_seed:
+        print('Success `cracking` random seed:', random_seed)
+        print('guess_seed:', guess_seed)
