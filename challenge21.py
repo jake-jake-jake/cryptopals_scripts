@@ -4,8 +4,6 @@
 # You apparently don't have to specify the type of int here.
 # This class draws heavily from the Crypto 101 book.
 
-import random
-
 def _int32(x):
     ''' Return the 32 least significant bits of an int.'''
     return int(0xFFFFFFFF & x)
@@ -97,6 +95,11 @@ fail = False
 my_mersenne = Mersenne(100)
 another_mersenne = MT19937(100)
 
-for i in range(100):
-    print('MINE [{}], THEIRS [{}]'.format(my_mersenne.temper(),
-                                          another_mersenne.extract_number()))
+for i in range(1248):
+    if my_mersenne.temper() == another_mersenne.extract_number():
+        continue
+    else:
+        print('Problem at iteration % in range 1248.', i)
+
+else: 
+    print('SUCCESS.')
