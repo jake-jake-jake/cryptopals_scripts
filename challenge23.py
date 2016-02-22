@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 # Cryptopals Challenge #23, generate state from detempered MT outputs.
-from random import randint
 from time import time
 
 
