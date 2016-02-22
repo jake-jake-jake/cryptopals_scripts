@@ -39,7 +39,7 @@ def cycle_xor(pt, key):
     return cm
 
 # Following functions used for calculating Hamming distance in bits.
-# I borrowed the the core operand (z &= z -1) from the internet, which
+# I borrowed the the core operation (z &= z -1) from the internet, which
 # borrowed it from a 1960s compsci paper.
 
 
