@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 
 import binascii
-import os 
+import os
 
-from copy import deepcopy
-from cryptotools import PKCS7_pad, PKCS7_unpad, cycle_xor
+from cryptotools import PKCS7_pad, PKCS7_unpad
 from Crypto.Cipher import AES
 from random import choice
 
@@ -26,12 +25,14 @@ def random_string_CBC(key):
     cipher = AES.new(key, AES.MODE_CBC, instance_IV)
     return (cipher.encrypt(PKCS7_pad(plaintext, 16)), instance_IV)
 
+
 def controlled_string_CBC(key):
     ''' CBC encrypt control string string, return it with IV.'''
     instance_IV = os.urandom(16)
     plaintext = b'A' * 48
     cipher = AES.new(key, AES.MODE_CBC, instance_IV)
     return (cipher.encrypt(PKCS7_pad(plaintext, 16)), instance_IV)
+
 
 def check_padding_CBC(ciphertext, instance_IV):
     ''' Return True if ciphertext has valid PKCS7 padding.'''
@@ -44,10 +45,12 @@ def check_padding_CBC(ciphertext, instance_IV):
     else:
         return True
 
+
 def make_work_blocks(ciphertext, IV):
     ''' Return list of two block sections of CBC ciphertext.'''
     concatenated = IV + ciphertext
     return [concatenated[i:i+32] for i in range(0, len(concatenated)-16, 16)]
+
 
 def find_work_byte(target, IV, padding_oracle):
     ''' Change one byte of IV at a time to determine padding length and
@@ -60,6 +63,7 @@ def find_work_byte(target, IV, padding_oracle):
     else:
         return index_byte - 2
 
+
 def xor_previous_suffix(suffix):
     ''' Xor suffix bytes to prepare it to produce additional pad byte.'''
     first_xor = b''.join([bytes([a ^ b])
@@ -68,6 +72,7 @@ def xor_previous_suffix(suffix):
     return b''.join([bytes([a ^ b])
                     for a, b
                     in zip(first_xor, bytes([len(suffix) + 1] * len(suffix)))])
+
 
 def CBC_pad_decrypt(target, IV, padding_oracle, work_byte = 15):
     ''' Decrypt a CBC block using an arbitrary IV and a padding oracle.'''
@@ -94,7 +99,7 @@ def CBC_pad_decrypt(target, IV, padding_oracle, work_byte = 15):
         print('No possible_IV passed oracle check. There is a problem.')
         return None
 
-def attack_CBC_via_padding_oracle(ciphertext, instance_IV):
+
     ''' Using instance_IV and padding oracle, decrypt ciphertext.'''
     work_blocks = make_work_blocks(ciphertext, instance_IV)
     decrypted = []
