@@ -3,9 +3,8 @@
 # Cryptopals Challenge #24. Create a MT stream cipher, then discover seed.
 # Throughout, using big endian byte order for ints.
 
-from time import time
 import os
-
+from random import randint
 
 def _int32(x):
     ''' Return the 32 least significant bits of an int.'''
@@ -82,12 +81,8 @@ class Mersenne:
         self.index = 624
         self.state = new_state
 
-    def recover_seed(self, state):
-        ''' Take regenerated state and return 0 index of previous state.'''
-        pass
 
-
-def MT_stream_cipher(data, MT, key):
+def MT_stream_xor(data, MT, key):
     ''' Encrypt or decrypt bytes  by xor vs keystream made from MT output.'''
     try:
         seed = int.from_bytes(key, 'big')
@@ -99,18 +94,27 @@ def MT_stream_cipher(data, MT, key):
         output_bytes = list(key_generator.temper().to_bytes(4, 'big'))
         for byte in output_bytes:
             key_stream.append(byte)
-    print('DEBUG: key_stream and length of key_stream,', key_stream, len(key_stream))
-    print('DEBUG: length of data,', len(data))
-    return b''.join(bytes([a ^ b]) for a,b in zip(data, key_stream))
+    return b''.join(bytes([a ^ b]) for a, b in zip(data, key_stream))
 
 
-
+def recover_seed(cipher, known_text, MT):
+    ''' Brute force through Mersenne seeds to recover seed.'''
+    for attempt in range(65536):
+        key = attempt.to_bytes(2, 'big')
+        if bytes(known_text, 'utf-8') in MT_stream_xor(cipher, Mersenne, key):
+            return key
+    else:
+        print('Unable to find key.')
+        return None
 
 this_key = os.urandom(2)
-some_data = 'YELLOW SUBMARINE' * 5
-bytes_data = bytes(some_data, 'utf-8')
+random_data = os.urandom(randint(10, 300))
+known_data = 'A' * 14
+plaintext = random_data + bytes(known_data, 'utf-8')
 
-cipher = MT_stream_cipher(bytes_data, Mersenne, this_key)
-decipher = MT_stream_cipher(cipher, Mersenne, this_key)
-print('DEBUG: cipher, \n', cipher)
-print('DEBUG: decipher, \n', decipher)
+cipher = MT_stream_xor(plaintext, Mersenne, this_key)
+
+recovered_seed = recover_seed(cipher, known_data, Mersenne)
+
+if this_key == recovered_seed:
+    print('Success.')
