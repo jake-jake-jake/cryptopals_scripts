@@ -74,22 +74,32 @@ def xor_previous_suffix(suffix):
                     in zip(first_xor, bytes([len(suffix) + 1] * len(suffix)))])
 
 
-def CBC_pad_decrypt(target, IV, padding_oracle, work_byte = 15):
-    ''' Decrypt a CBC block using an arbitrary IV and a padding oracle.'''
-    prefix = IV[:work_byte]
+def make_suffix(IV, work_byte):
+    ''' Process suffix bytes of IV insertion.'''
+    # First round on each block will raise index error as work_byte is
+    # last byte in IV.
     try: 
         suffix = IV[work_byte + 1:]
     except IndexError:
-        suffix = b''
-    # If there is a whole block of valid padding, return that block xored
-    # vs a block of 16 bytes to recover plaintext.
+        return b''
+    # if suffix (known bytes) is whole block, return block xored vs. padding
     if len(suffix) == 16:
         return b''.join([bytes([a ^ b])
                        for a, b
                        in zip(suffix, b'\x10' * 16)])
+    # else prep suffix to make additional block of padding
     else:
-        suffix = xor_previous_suffix(suffix)
+        return xor_previous_suffix(suffix)
 
+
+def CBC_pad_decrypt(target, IV, padding_oracle, work_byte = 15):
+    ''' Decrypt a CBC block using an arbitrary IV and a padding oracle.'''
+    prefix = IV[:work_byte]
+    suffix = make_suffix(IV, work_byte)
+    # if suffix (known blocks) are full block, return that value.
+    if len(suffix) == 16:
+        return suffix
+    # else make all possible values for next byte of padding
     possible_IVs = [prefix + bytes([b]) + suffix for b in range(256)]
     for possible_IV in possible_IVs:
         if padding_oracle(target, possible_IV):
@@ -98,6 +108,7 @@ def CBC_pad_decrypt(target, IV, padding_oracle, work_byte = 15):
     else:
         print('No possible_IV passed oracle check. There is a problem.')
         return None
+
 
 def attack_CBC_via_padding_oracle(ciphertext, instance_IV):
     ''' Using instance_IV and padding oracle, decrypt ciphertext.'''
