@@ -99,7 +99,7 @@ def CBC_pad_decrypt(target, IV, padding_oracle, work_byte = 15):
         print('No possible_IV passed oracle check. There is a problem.')
         return None
 
-
+def attack_CBC_via_padding_oracle(ciphertext, instance_IV):
     ''' Using instance_IV and padding oracle, decrypt ciphertext.'''
     work_blocks = make_work_blocks(ciphertext, instance_IV)
     decrypted = []
