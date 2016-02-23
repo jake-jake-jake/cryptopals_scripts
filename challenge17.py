@@ -26,14 +26,6 @@ def random_string_CBC(key):
     return (cipher.encrypt(PKCS7_pad(plaintext, 16)), instance_IV)
 
 
-def controlled_string_CBC(key):
-    ''' CBC encrypt control string string, return it with IV.'''
-    instance_IV = os.urandom(16)
-    plaintext = b'A' * 48
-    cipher = AES.new(key, AES.MODE_CBC, instance_IV)
-    return (cipher.encrypt(PKCS7_pad(plaintext, 16)), instance_IV)
-
-
 def check_padding_CBC(ciphertext, instance_IV):
     ''' Return True if ciphertext has valid PKCS7 padding.'''
     cipher = AES.new(static_key, AES.MODE_CBC, instance_IV)
