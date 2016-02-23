@@ -5,6 +5,8 @@
 
 import os
 from random import randint
+from time import time
+
 
 def _int32(x):
     ''' Return the 32 least significant bits of an int.'''
@@ -88,6 +90,8 @@ def MT_stream_xor(data, MT, key):
         seed = int.from_bytes(key, 'big')
     except ValueError:
         raise ('Unable to convert key to seed.')
+    except TypeError:
+        seed = key
     key_generator = MT(seed)
     key_stream = []
     while len(key_stream) < len(data):
@@ -107,14 +111,37 @@ def recover_seed(cipher, known_text, MT):
         print('Unable to find key.')
         return None
 
+
+def generate_password_token(username, token):
+    now = int(time())
+    literal = bytes(username, 'utf-8') + os.urandom(20) + token
+    return MT_stream_xor(literal, Mersenne, now)
+
+
+def check_token(cipher, username, pass_token):
+    user_check = bytes(username, 'utf-8')
+    now = int(time())
+    for offset in range(10000):
+        deciphered = MT_stream_xor(cipher, Mersenne, now-offset)
+        if user_check in deciphered and pass_token in deciphered:
+            return True
+    else:
+        return False
+
 this_key = os.urandom(2)
 random_data = os.urandom(randint(10, 300))
 known_data = 'A' * 14
 plaintext = random_data + bytes(known_data, 'utf-8')
+password_token = b'set_reset=true'
+user = 'some_account@aol.com'
 
-cipher = MT_stream_xor(plaintext, Mersenne, this_key)
-
-recovered_seed = recover_seed(cipher, known_data, Mersenne)
-
-if this_key == recovered_seed:
+generated_token = generate_password_token(user, password_token)
+if check_token(generated_token, user, password_token):
     print('Success.')
+else:
+    print('Failure.')
+
+# cipher = MT_stream_xor(plaintext, Mersenne, this_key)
+# recovered_seed = recover_seed(cipher, known_data, Mersenne)
+# if this_key == recovered_seed:
+#     print('Success.')
