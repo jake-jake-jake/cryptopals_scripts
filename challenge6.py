@@ -11,8 +11,8 @@ def find_potential_keys(cipher, key_len):
         slice_key_candidates = []
         for _ in range(256):
             cm = zip(list(slc), itertools.cycle([_]))
-            xor_attempt = [chr(a ^ b) for a, b in cm]
-            slice_key_candidates.append((chr(_), ct.check_chars(''.join(xor_attempt))))
+            xor_attempt = bytes([a ^ b for a, b in cm])
+            slice_key_candidates.append((chr(_), ct.check_chars(xor_attempt)))
         slice_key_candidates.sort(key=lambda x: x[1], reverse=True)
         key_potentials.append(slice_key_candidates[:1])
     return[x[0] for x in key_potentials]

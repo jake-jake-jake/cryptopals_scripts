@@ -9,7 +9,7 @@ from random import choice
 
 
 def random_string_CBC(key):
-    ''' CBC encrypt random string, return it with IV.'''
+    ''' Return random string CBC encypted, along with IV.'''
     strings = ['MDAwMDAwTm93IHRoYXQgdGhlIHBhcnR5IGlzIGp1bXBpbmc=',
     'MDAwMDAxV2l0aCB0aGUgYmFzcyBraWNrZWQgaW4gYW5kIHRoZSBWZWdhJ3MgYXJlIHB1bXBpbic=',
     'MDAwMDAyUXVpY2sgdG8gdGhlIHBvaW50LCB0byB0aGUgcG9pbnQsIG5vIGZha2luZw==',
