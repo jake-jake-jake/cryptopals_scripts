@@ -42,7 +42,24 @@ def edit_ciphertext(ciphertext, key, offset, newtext):
     new_cipher = encrypt_AES_CTR(key, nonce, data_to_encrypt, block)
     return previous_cipher_bytes + new_cipher[index:]
 
-# Randomize nonce once the basic structure is working
+
+def crack_editable_CTR_cipher(ciphertext, edit_oracle):
+    ''' Crack a CTR encrypted cipher by making use of an oracle that allows
+        find/seek editing.'''
+    # Create series of null bytes to match length of ciphertext
+    junk_bytes = bytes(len(ciphertext))
+    key = edit_ciphertext(ciphertext, static_key, 0, junk_bytes)
+    return bytes([a ^ b for a,b in zip(ciphertext, key)])
+
 nonce = os.urandom(8)
 static_key = os.urandom(16)
 
+with open('7_decrypted.txt', 'r') as f:
+    pt = bytes(f.read(), 'utf-8')
+
+encrypted = encrypt_AES_CTR(static_key, nonce, pt)
+disencrypted = crack_editable_CTR_cipher(encrypted, edit_ciphertext)
+
+print('Sought to replace entire ciphertext with stretch of null bytes;')
+print('then used the returned key to disencrypt encrypted data. Result:')
+print(disencrypted)
