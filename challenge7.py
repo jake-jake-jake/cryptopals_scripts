@@ -8,14 +8,11 @@ with open('7.txt') as fo:
 	encrypted = fo.read()
 
 key = b'YELLOW SUBMARINE'
-iv = Random.new().read(AES.block_size)
 
-cipher = AES.new(key, AES.MODE_ECB, iv)
+cipher = AES.new(key, AES.MODE_ECB)
 
 encrypted_bytes = ct.base64_to_bytes(encrypted)
 msg = cipher.decrypt(encrypted_bytes)
-print(msg)
 
-
-
-
+with open('7_decrypted.txt', 'w') as f:
+    print(msg, file=f)
