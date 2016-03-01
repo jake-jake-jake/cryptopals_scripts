@@ -29,7 +29,7 @@ test_literals = [b'A' * 48, b'B' * 48, b'C' * 48]
 
 for literal in test_literals:
     encrypt_literal = encrypt_AES_CTR(static_key, nonce, literal)
-    for i in range(0,len(encrypt_literal),16):
+    for i in range(0, len(encrypt_literal), 16):
         print(encrypt_literal[i:i+16])
 
 print('encrypted_bytes:', decrypt_AES_CTR(static_key, nonce, encrypted_bytes))
