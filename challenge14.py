@@ -7,15 +7,18 @@ from Crypto.Cipher import AES
 import os
 from random import randint
 
+
 def PKCS7_pad(data, block_length):
     ''' Pad data with PKCS7 padding.'''
     padding = block_length - (len(data) % block_length)
     return (data + bytes([padding])*padding)
 
+
 def ECB_encrypt(data, key):
     ''' Takes data and key to produce AES ECB cipher.'''
     ECB_cipher = AES.new(key, AES.MODE_ECB)
     return ECB_cipher.encrypt(PKCS7_pad(data, 16))
+
 
 def ECB_oracle(attacker_controlled, prefix = None, key = None):
     ''' Oracle prefixes random bytes to an attacker controlled variable
@@ -32,6 +35,7 @@ def ECB_oracle(attacker_controlled, prefix = None, key = None):
     con_bytes = prefix + attacker_controlled + b64_bytes
     return ECB_encrypt(con_bytes, key)
 
+
 def find_insertion_and_index(oracle):
     ''' Returns insertion to zero random prefix to end of block
         and index of following block.'''
@@ -40,6 +44,7 @@ def find_insertion_and_index(oracle):
             return (i - 32, verify_ECB(oracle, i))
     else:
         raise ValueError('Unable to find static insertion. Block length longer than 16.')
+
 
 def verify_ECB(oracle, insertion):
     ''' Find index where variable insertion will be used to attack cipher.'''
@@ -50,11 +55,13 @@ def verify_ECB(oracle, insertion):
     else: 
         return False
 
+
 def create_byte_dict(oracle, insertion, b_i):
     ''' Return dictionary of all possible end bytes for block at index b_i.'''
     index = b_i * 16
     return {oracle(insertion + bytes([b]))[index: index + 16]: bytes([b]) 
             for b in range(256)}
+
 
 def byte_byte_ECB(oracle, static_insert, static_ind):
     ''' Using determined static insertion and index, break ECB cipher byte by byte.'''
