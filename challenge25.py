@@ -40,6 +40,7 @@ def edit_ciphertext(ciphertext, key, offset, newtext):
     garbage_bytes = bytes(index)
     data_to_encrypt = garbage_bytes + newtext
     new_cipher = encrypt_AES_CTR(key, nonce, data_to_encrypt, block)
+    print('new_cipher', new_cipher)
     return previous_cipher_bytes + new_cipher[index:]
 
 
@@ -54,8 +55,8 @@ def crack_editable_CTR_cipher(ciphertext, edit_oracle):
 nonce = os.urandom(8)
 static_key = os.urandom(16)
 
-with open('7_decrypted.txt', 'r') as f:
-    pt = bytes(f.read(), 'utf-8')
+with open('7_decrypted.txt', 'rb') as f:
+    pt = f.read()
 
 encrypted = encrypt_AES_CTR(static_key, nonce, pt)
 disencrypted = crack_editable_CTR_cipher(encrypted, edit_ciphertext)
@@ -63,3 +64,7 @@ disencrypted = crack_editable_CTR_cipher(encrypted, edit_ciphertext)
 print('Sought to replace entire ciphertext with stretch of null bytes;')
 print('then used the returned key to disencrypt encrypted data. Result:')
 print(disencrypted)
+
+plaintext = b'This is some data that I want to edit on the fly.'
+encrypted_text = encrypt_AES_CTR(static_key, nonce, plaintext)
+edited_encrypted = edit_ciphertext(encrypted_text, static_key, 5, b'all my words')
