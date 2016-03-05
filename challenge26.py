@@ -54,17 +54,13 @@ def bit_flip_CTR(CBC_oracle, target_bytes, target_block, b_l=16):
     ''' Flip bits in CBC cipher to produce target bytes at target block.'''
     insertion = bytes(16)
     work_cipher = CBC_oracle(insertion)
-    # We know this is the plaintext; if we didn't, we would double our Z insertion.
-    plaintext_to_be_flipped = b';comment2=%20lik'
-    # The zero point that produced our known plaintext is this block; we need 
-    # to treat it as the base from which we work.
-    insertion_cipher_block = work_cipher[32:48]
-    # Find the xor product of the target and known plaintext.
-    bytes_to_produce_target = bytes_xor(plaintext_to_be_flipped, target_bytes)
-    # Combine that product with the base cipherblock.
-    flipped_bits = bytes_xor(insertion_cipher_block, bytes_to_produce_target)
-    flipped_cipher = work_cipher[:32] + flipped_bits + work_cipher[48:]    
-    return flipped_cipher
+    # Assuming we know the point at which our insertion is entered into this;
+    # it would be harder otherwise. We'll xor the cipher vs. our insertion.
+    keystream_section = bytes_xor(work_cipher[32:48], insertion)
+    # Now we xor the known section of keystream_section vs. our target_bytes.
+    # This is simpler than CBC bitflipping. 
+    second_insertion = bytes_xor(keystream_section, target_bytes)
+    return work_cipher[:32] + second_insertion + work_cipher[48:]
 
 test = b'this=this=admin;hahahaha'
 static_key = os.urandom(16)
