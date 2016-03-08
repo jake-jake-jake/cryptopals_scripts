@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# This pure python implementation of SHAv1 from 
 
 from __future__ import print_function
 import struct
@@ -86,9 +87,7 @@ class Sha1Hash(object):
 
     def update(self, arg):
         """Update the current digest.
-
         This may be called repeatedly, even after calling digest or hexdigest.
-        
         Arguments:
             arg: bytes, bytearray, or BytesIO object to read from.
         """
