@@ -63,7 +63,10 @@ def _process_chunk(chunk, h0, h1, h2, h3, h4):
     return h0, h1, h2, h3, h4
 
 class Sha1Hash(object):
-    """A class that mimics that hashlib api and implements the SHA-1 algorithm."""
+    """ A class that mimics that hashlib api and implements the SHA-1 algorithm.
+
+        Modified by me (Jake) to allow cloning of internal state, for length
+        extension attacks."""
 
     name = 'python-sha1'
     digest_size = 20
@@ -84,6 +87,14 @@ class Sha1Hash(object):
         self._unprocessed = b''
         # Length in bytes of all data that has been processed so far
         self._message_byte_length = 0
+
+    def clone_state(self, state, message_length):
+        ''' Clone state of a SHAv1 hashing function with message length.
+            State should be a tuple of hex values. message_length is in bytes.
+        '''
+        assert len(state) == 5
+        self._h = state
+        self._message_byte_length = message_length
 
     def update(self, arg):
         """Update the current digest.

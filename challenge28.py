@@ -11,6 +11,11 @@ import random
 import sha1
 
 
+def get_random_secret():
+    ''' Get a random secret from the dictionary.'''
+    return random.choice(open('/usr/share/dict/words', 'r').read().split('\n'))
+
+
 def get_random_string(length):
     ''' Return random string of specified length.'''
     return ''.join([random.choice(string.printable) for _ in range(length)])
@@ -36,5 +41,5 @@ def compare_digests(key, rounds=100):
     print('Digests identical for %s rounds.' % rounds)
 
 
-static_key = os.urandom(16)
+static_key = bytes(get_random_secret(), 'utf-8')
 compare_digests(static_key)
