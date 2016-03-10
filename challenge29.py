@@ -29,8 +29,8 @@ def make_sha1_clone(hex_digest, message, est_len):
     state = tuple([int(hex_digest[i:i+8], 16)
                   for i in range(0, len(hex_digest), 8)])
     remainder_index = (len(message) // 64) * 64
-    unprocessed = message[remainder_index[remainder_index:]]
-    clone.clone_state(digest, unprocessed, length)
+    unprocessed = message[remainder_index:]
+    clone.clone_state(state, unprocessed, est_len)
     return clone
 
 
