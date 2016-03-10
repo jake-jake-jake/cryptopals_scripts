@@ -88,12 +88,14 @@ class Sha1Hash(object):
         # Length in bytes of all data that has been processed so far
         self._message_byte_length = 0
 
-    def clone_state(self, state, message_length):
+    def clone_state(self, state, remainder, message_length):
         ''' Clone state of a SHAv1 hashing function with message length.
-            State should be a tuple of hex values. message_length is in bytes.
+            State should be a tuple of ints, remainder is unprocessed
+            data from previous input; message_length is in bytes.
         '''
         assert len(state) == 5
         self._h = state
+        self._unprocessed = remainder
         self._message_byte_length = message_length
 
     def update(self, arg):
