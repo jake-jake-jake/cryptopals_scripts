@@ -23,14 +23,23 @@ unknown_secret_prefix = bytes(get_random_secret(), 'utf-8')
 
 
 # Attacker-side functions
-def make_sha1_clone(hex_digest, message, est_len):
-    ''' Given hex_digest, message, and estimated length, clone SHAv1 hash.'''
+def make_sha1_clone(hex_digest, known_suffix, est_len=None):
+    ''' Given hex_digest and estimated length, clone SHAv1 hash.
+        Important to note that state is only updated with each round of full
+        64 bytes of message.
+    '''
+    # Instantiate clone
     clone = sha1.Sha1Hash()
-    state = tuple([int(hex_digest[i:i+8], 16)
+    # State is output of digest.
+    clone._h = tuple([int(hex_digest[i:i+8], 16)
                   for i in range(0, len(hex_digest), 8)])
-    remainder_index = (len(message) // 64) * 64
-    unprocessed = message[remainder_index:]
-    clone.clone_state(state, unprocessed, est_len)
+    # Set estimated length of message; I figure most secret prefixes are 128
+    # bit or less; there is some potential for edgecase problems here. That
+    # can be controlled by manually setting len_state +/- 64 bytes.
+    if not est_len:
+        likely_len_state = (len(known_suffix) + 16) // 64
+        likely_len_state = (likely_len_state * 64) + 64
+    clone._message_byte_length = likely_len_state
     return clone
 
 
@@ -47,12 +56,64 @@ def generate_padding(length):
     return first_64_bytes + final_128_bits
 
 
-def get_digest_and_check_variable(hashfunc, message):
-    ''' Send message to hashfunc twice to get digest and expected update output.'''
-    digest = hashfunc(message)
-    expected_update = hashfunc(message + message)
-    return digest, expected_update
+# Is forgery a valid?
+def check_hash(cloned_hash, forgery=None):
+    ''' Return True if hash is valid for forgery.'''
+    if not forgery:
+        forgery = unknown_secret_prefix + decoy + padding + insert
+    check_hash = hashlib.new('sha1')
+    check_hash.update(forgery)
+    if cloned_hash == check_hash.hexdigest():
+        return True
+    else:
+        return False
 
-message = b'comment1=cooking%20MCs;userdata=foo;'
-output, target = get_digest_and_check_variable(make_hash, message)
 
+# Debug scripts
+def make_test_hashes():
+    test = sha1.Sha1Hash()
+    test.update(unknown_secret_prefix)
+    test.update(decoy)
+    clone = make_sha1_clone(test.hexdigest(), decoy)
+    test.update(generate_padding(len(unknown_secret_prefix + decoy)))
+    return test, clone
+
+
+def main():
+    # decoy and insert variables from Matasano's page.
+    decoy = b'comment1=cooking%20MCs;userdata=foo;comment2=%20like%20a%20pound%20of%20bacon'
+    insert = b'admin=true;'
+    # create padding to create intended_forgery, so we can check for success.
+    padding = generate_padding(len(unknown_secret_prefix + decoy))
+    intended_forgery = unknown_secret_prefix + decoy + padding + insert
+    # get digest from decoy; clone the hash; update it with target insertion
+    digest = make_hash(decoy)
+    cloned_sha1 = make_sha1_clone(digest, decoy)
+    cloned_sha1.update(insert)
+    if check_hash(cloned_sha1.hexdigest(), intended_forgery):
+        print('Extension attack successful with message length %s.' % cloned_sha1._message_byte_length)
+        return None
+    else:
+        print('Attack failed with first estimated length. Trying with shorter estimate.')
+        cloned_sha1 = make_sha1_clone(digest, decoy)
+        cloned_sha1._message_byte_length -= 64
+        cloned_sha1.update(insert)
+
+    if check_hash(cloned_sha1.hexdigest(), intended_forgery):
+        print('Extension attack successful with message length %s.' % cloned_sha1._message_byte_length)
+        return None
+    else:
+        print('Attack failed with second estimated length. Trying with longer estimate.')
+        cloned_sha1 = make_sha1_clone(digest, decoy)
+        cloned_sha1._message_byte_length += 64
+        cloned_sha1.update(insert)
+
+    if check_hash(cloned_sha1.hexdigest(), intended_forgery):
+        print('Extension attack successful with message length %s.' % cloned_sha1._message_byte_length)
+        return None
+    else:
+        print('Attack failed on third attempt. Exiting.')
+        return None
+
+if __name__ == '__main__':
+    main()
