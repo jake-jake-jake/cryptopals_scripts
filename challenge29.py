@@ -87,16 +87,6 @@ def check_hash(cloned_hash, forgery=None):
         return False
 
 
-# Debug scripts
-def make_test_hashes():
-    test = sha1.Sha1Hash()
-    test.update(unknown_secret_prefix)
-    test.update(decoy)
-    clone = make_sha1_clone(test.hexdigest(), decoy)
-    test.update(generate_padding(len(unknown_secret_prefix + decoy)))
-    return test, clone
-
-
 def main():
     # decoy and insert variables from Matasano's page.
     decoy = b'comment1=cooking%20MCs;userdata=foo;comment2=%20like%20a%20pound%20of%20bacon'
@@ -106,10 +96,14 @@ def main():
     intended_forgery = unknown_secret_prefix + decoy + padding + insert
     # get digest from decoy; clone the hash; update it with target insertion
     digest = make_hash(decoy)
+    deduced_len = find_prefix_length(make_hash, decoy)
+    attack_insertion = decoy + generate_padding(len(decoy) + deduced_len) + insert
     cloned_sha1 = make_sha1_clone(digest, decoy)
     cloned_sha1.update(insert)
     if check_hash(cloned_sha1.hexdigest(), intended_forgery):
         print('Extension attack successful with message length %s.' % cloned_sha1._message_byte_length)
+        print('Bytes: %s' % attack_insertion)
+        print('SHA digest: %s' % cloned_sha1.hexdigest())
         return None
     else:
         print('Attack failed with first estimated length. Trying with shorter estimate.')
