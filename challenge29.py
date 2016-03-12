@@ -56,6 +56,24 @@ def generate_padding(length):
     return first_64_bytes + final_128_bits
 
 
+def find_prefix_length(hash_func, insertion):
+    ''' Find byte length of unknown secret prefix.'''
+    first_hash = hash_func(insertion)
+    clone = make_sha1_clone(first_hash, insertion)
+    check_byte = b'z'
+    for _ in range(64):
+        # Send insertion plus incremental padding, to find result that matches
+        # first_hash. That is the length of unknown prefix. If no matches in 64
+        # rounds, it's not a prefix || message hash.
+        padding = generate_padding(len(insertion) + _)
+        clone.update(check_byte)
+        if clone.hexdigest() == hash_func(insertion + padding + check_byte):
+            return _
+        clone = make_sha1_clone(first_hash, insertion)
+    else:
+        return None
+
+
 # Is forgery a valid?
 def check_hash(cloned_hash, forgery=None):
     ''' Return True if hash is valid for forgery.'''
