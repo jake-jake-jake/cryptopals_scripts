@@ -2,6 +2,8 @@
 
 # I added functionality to set state to digest output.
 
+import binascii
+import hashlib
 import math
  
 rotate_amounts = [7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
@@ -54,7 +56,12 @@ def md5(message, hex_digest=None):
         for i, val in enumerate([a, b, c, d]):
             hash_pieces[i] += val
             hash_pieces[i] &= 0xFFFFFFFF
- 
+
+        print('DEBUG: A, B, C, D', hash_pieces)
+    
+    if hex_digest:
+        digest = [x.to_bytes(4, byteorder='little') for x in hash_pieces]
+        return = b''.join([binascii.b2a_hex(x) for x in digest])
     return sum(x<<(32*i) for i, x in enumerate(hash_pieces))
  
 def md5_to_hex(digest):
@@ -67,3 +74,4 @@ if __name__=='__main__':
             b"12345678901234567890123456789012345678901234567890123456789012345678901234567890"]
     for message in demo:
         print(md5_to_hex(md5(message)),' <= "',message.decode('ascii'),'"', sep='')
+
