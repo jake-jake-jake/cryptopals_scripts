@@ -29,10 +29,13 @@ def left_rotate(x, amount):
     x &= 0xFFFFFFFF
     return ((x<<amount) | (x>>(32-amount))) & 0xFFFFFFFF
  
-def md5(message, hex_digest=None):
+def md5(message, hex_digest=None, overide_len=0):
  
     message = bytearray(message) #copy our input into a mutable buffer
-    orig_len_in_bits = (8 * len(message)) & 0xffffffffffffffff
+    if not overide_len:
+        orig_len_in_bits = (8 * len(message)) & 0xffffffffffffffff
+    else:
+        orig_len_in_bits = (8 * overide_len) & 0xffffffffffffffff
     message.append(0x80)
     while len(message)%64 != 56:
         message.append(0)
@@ -61,7 +64,7 @@ def md5(message, hex_digest=None):
     
     if hex_digest:
         digest = [x.to_bytes(4, byteorder='little') for x in hash_pieces]
-        return = b''.join([binascii.b2a_hex(x) for x in digest])
+        return b''.join([binascii.b2a_hex(x) for x in digest])
     return sum(x<<(32*i) for i, x in enumerate(hash_pieces))
  
 def md5_to_hex(digest):
