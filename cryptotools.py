@@ -48,9 +48,7 @@ def hamming_distance(a, b):
     if len(a) != len(b):
         raise ValueError('Undefined for strings of unequal length')
     count = 0
-    bits_a = [int(bin(char), 2) for char in a]
-    bits_b = [int(bin(char), 2) for char in b]
-    for ch1, ch2 in zip(bits_a, bits_b):
+    for ch1, ch2 in zip(a, b):
         z = ch1 ^ ch2
         while z:
             count += 1
