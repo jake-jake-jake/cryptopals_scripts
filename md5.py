@@ -36,6 +36,7 @@ def md5(message, hex_digest=None, overide_len=0):
         orig_len_in_bits = (8 * len(message)) & 0xffffffffffffffff
     else:
         orig_len_in_bits = (8 * overide_len) & 0xffffffffffffffff
+    print('DEBUG: length of MD5 orig_len_in_bits, ', orig_len_in_bits)
     message.append(0x80)
     while len(message)%64 != 56:
         message.append(0)
@@ -59,12 +60,10 @@ def md5(message, hex_digest=None, overide_len=0):
         for i, val in enumerate([a, b, c, d]):
             hash_pieces[i] += val
             hash_pieces[i] &= 0xFFFFFFFF
-
-        print('DEBUG: A, B, C, D', hash_pieces)
     
     if hex_digest:
         digest = [x.to_bytes(4, byteorder='little') for x in hash_pieces]
-        return b''.join([binascii.b2a_hex(x) for x in digest])
+        return '{:032x}'.format(int.from_bytes(raw, byteorder='big'))
     return sum(x<<(32*i) for i, x in enumerate(hash_pieces))
  
 def md5_to_hex(digest):
