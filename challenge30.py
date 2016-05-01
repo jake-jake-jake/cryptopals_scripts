@@ -9,7 +9,9 @@ import random
 def make_hash(data):
     h = md4.MD4()
     h.add(unknown_secret_prefix)
+    print(h.count)
     h.add(data)
+    print(h.count)
     return h.finish()
 
 
@@ -28,7 +30,7 @@ def fake_md4_hash(hex_digest, known_suffix, append_bytes, prefix_len=0):
     padding = generate_padding(len(known_suffix) + prefix_len)
     overide_len = prefix_len + len(known_suffix + padding)
     print(overide_len)
-    clone = md4.MD4(hex_digest=hex_digest, est_len=overide_len)
+    clone = md4.MD4(hex_digest=hex_digest, est_len=overide_len%64)
     clone.add(append_bytes)
     return clone.finish()
 
@@ -65,14 +67,17 @@ def check_hash(cloned_hash, forgery=None):
     ''' Return True if hash is valid for forgery.'''
     if not forgery:
         forgery = unknown_secret_prefix + decoy + padding + insert
-    check_hash = hashlib.md5()
-    check_hash.update(forgery)
-    if cloned_hash == check_hash.hexdigest():
+    check_hash = md4.MD4()
+    check_hash.add(forgery)
+    if cloned_hash == check_hash.finish():
         return True
     else:
         return False
 
-
+decoy = b'comment1=cooking%20MCs;userdata=foo;comment2=%20like%20a%20pound%20of%20bacon'
+insert = b'admin=true;'
+# create padding to create intended_forgery, so we can check for success.
+padding = generate_padding(len(unknown_secret_prefix + decoy))
 
 def main():
     # decoy and insert variables from Matasano's page.
@@ -81,11 +86,15 @@ def main():
     # create padding to create intended_forgery, so we can check for success.
     padding = generate_padding(len(unknown_secret_prefix + decoy))
     intended_forgery = unknown_secret_prefix + decoy + padding + insert
+    print('length of first block', len(unknown_secret_prefix + decoy + padding))
     # get digest from decoy; clone the hash; update it with target insertion
     digest = make_hash(decoy)
     # deduced_len = find_prefix_length(make_hash, decoy)
     attack_insertion = decoy + generate_padding(len(decoy) + len(unknown_secret_prefix)) + insert
-    fake_hash = fake_md4_hash(digest, decoy, insert, len(unknown_secret_prefix))
+    fake_hash = fake_md4_hash(digest, decoy, insert, )
+    print('attack_insertion: \n', attack_insertion)
+    print('fake_hash: \n', fake_hash)
+    print('digest:\n', digest)
     if check_hash(fake_hash, intended_forgery):
         print('Extension attack successful with message length %s.' % len(attack_insertion))
         print('Bytes: %s' % attack_insertion)

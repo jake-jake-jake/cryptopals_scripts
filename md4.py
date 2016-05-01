@@ -29,8 +29,9 @@ class MD4(object):
                     0x10325476
                     ]
         else:
-            self.h = [int(hex_digest[i:i+8], 16)
-                  for i in range(0, len(hex_digest), 8)]
+            self.h = [int(hex_digest[i:i+8],16)
+                     for i in range(0, len(hex_digest), 8)]
+            print([hex(x) for x in self.h])
 
     def _add_chunk(self, chunk):
         self.count += 1
