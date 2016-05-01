@@ -7,15 +7,15 @@ def leftrotate(i, n):
     return ((i << n) & 0xffffffff) | (i >> (32 - n))
 
 
-def F(x,y,z):
+def F(x, y, z):
     return (x & y) | (~x & z)
 
 
-def G(x,y,z):
+def G(x, y, z):
     return (x & y) | (x & z) | (y & z)
 
 
-def H(x,y,z):
+def H(x, y, z):
     return x ^ y ^ z
 
 
@@ -93,7 +93,7 @@ class MD4(object):
         self.__init__()
         return binascii.hexlify(out)
 
-if __name__=='__main__':
+if __name__ == '__main__':
     test = ((b'', b'31d6cfe0d16ae931b73c59d7e0c089c0'),
             (b'a', b'bde52cb31de33e46245e05fbdbd6fb24'),
             (b'abc', b'a448017aaf21d8525fc10ae87aa6729d'),
