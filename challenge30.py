@@ -9,11 +9,18 @@ import random
 def make_hash(data):
     h = md4.MD4()
     h.add(unknown_secret_prefix)
-    print(h.count)
     h.add(data)
-    print(h.count)
+    print(h.h)
     return h.finish()
 
+
+def test_hash():
+    h = md4.MD4()
+    h.add(unknown_secret_prefix)
+    h.add(decoy)
+    h.add(padding)
+    h.add(insert)
+    return h.finish()
 
 def get_random_secret():
     ''' Get a random secret from the dictionary.'''
@@ -23,15 +30,17 @@ def get_random_secret():
 # unknown_secret_prefix = bytes(get_random_secret(), 'utf-8')
 unknown_secret_prefix = b'A'
 
+
 # Attack side functions
-def fake_md4_hash(hex_digest, known_suffix, append_bytes, prefix_len=0):
-    ''' Take hex_digest from MD5 with unknown prefix, known_suffix,
-        and return possible hash with glue_padding.'''
+def fake_md4_hash(digest, known_suffix, append_bytes, prefix_len=0):
+    ''' Take digest from MD4 with unknown prefix, known_suffix,
+        and return new hash from insertion with glue_padding.'''
     padding = generate_padding(len(known_suffix) + prefix_len)
     overide_len = prefix_len + len(known_suffix + padding)
-    print(overide_len)
-    clone = md4.MD4(hex_digest=hex_digest, est_len=overide_len%64)
-    clone.add(append_bytes)
+    clone = md4.MD4(data=append_bytes, hex_digest=digest, est_len=overide_len)
+    print('clone count', clone.count)
+    print('clone state', clone.h)
+    print('clone remainder', clone.remainder)
     return clone.finish()
 
 
@@ -59,7 +68,8 @@ def find_prefix_length(hash_func, insertion):
         if str(next_hash) == target:
             return _
     else:
-        raise Exception('Unable to find prefix length; expected %s.' % len(unknown_secret_prefix))
+        raise Exception('Unable to find prefix length; expected %s.' %
+                        len(unknown_secret_prefix))
 
 
 # Is forgery a valid?
@@ -69,36 +79,42 @@ def check_hash(cloned_hash, forgery=None):
         forgery = unknown_secret_prefix + decoy + padding + insert
     check_hash = md4.MD4()
     check_hash.add(forgery)
-    if cloned_hash == check_hash.finish():
+    check_hash = check_hash.finish()
+    print(cloned_hash, check_hash)
+    if cloned_hash == check_hash:
         return True
     else:
         return False
 
+
+# decoy and insert variables from Matasano's page.
 decoy = b'comment1=cooking%20MCs;userdata=foo;comment2=%20like%20a%20pound%20of%20bacon'
 insert = b'admin=true;'
 # create padding to create intended_forgery, so we can check for success.
 padding = generate_padding(len(unknown_secret_prefix + decoy))
+intended_forgery = decoy + padding + insert
+failsafe = test_hash()
+target_digest = make_hash(intended_forgery)
+
 
 def main():
-    # decoy and insert variables from Matasano's page.
-    decoy = b'comment1=cooking%20MCs;userdata=foo;comment2=%20like%20a%20pound%20of%20bacon'
-    insert = b'admin=true;'
-    # create padding to create intended_forgery, so we can check for success.
-    padding = generate_padding(len(unknown_secret_prefix + decoy))
-    intended_forgery = unknown_secret_prefix + decoy + padding + insert
-    print('length of first block', len(unknown_secret_prefix + decoy + padding))
+    start_digest = make_hash(decoy + padding)
+    print('HASH OF INTENDED FORGERY:', target_digest)
+    print('HASH OF DECOY:', start_digest)
     # get digest from decoy; clone the hash; update it with target insertion
-    digest = make_hash(decoy)
     # deduced_len = find_prefix_length(make_hash, decoy)
-    attack_insertion = decoy + generate_padding(len(decoy) + len(unknown_secret_prefix)) + insert
-    fake_hash = fake_md4_hash(digest, decoy, insert, )
-    print('attack_insertion: \n', attack_insertion)
+    attack_insertion = decoy + generate_padding(len(decoy) +
+                       len(unknown_secret_prefix))
+    fake_hash = fake_md4_hash(digest=start_digest, known_suffix=decoy,
+                              append_bytes=insert, prefix_len=1)
     print('fake_hash: \n', fake_hash)
-    print('digest:\n', digest)
-    if check_hash(fake_hash, intended_forgery):
-        print('Extension attack successful with message length %s.' % len(attack_insertion))
+    print('digest:\n', target_digest)
+    print('test_hash:', test_hash())
+    if check_hash(fake_hash):
+        print('Extension attack successful with message length %s.' %
+              len(attack_insertion))
         print('Bytes: %s' % attack_insertion)
-        print('SHA digest: %s' % fake_hash())
+        print('MD4 digest: %s' % fake_hash())
 
     else:
         print('Attack failed. Exiting.')
