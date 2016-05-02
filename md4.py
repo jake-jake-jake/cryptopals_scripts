@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import binascii
 import struct
 
@@ -34,9 +34,7 @@ class MD4(object):
                 0x10325476
             ]
         else:
-            self.h = [int(hex_digest[i:i + 8], 16)
-                      for i in range(0, len(hex_digest), 8)]
-            print([hex(x) for x in self.h])
+            self.h = list(struct.unpack('<4I', binascii.unhexlify(hex_digest)))
 
     def _add_chunk(self, chunk):
         self.count += 1
